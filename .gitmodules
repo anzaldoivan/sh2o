@@ -1,0 +1,3 @@
+[submodule "external/SH2ZAM"]
+	path = external/SH2ZAM
+	url = https://github.com/lamb2k/SH2ZAM.git
