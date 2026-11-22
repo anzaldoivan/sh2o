@@ -1,0 +1,9 @@
+# Static check of the gte suite object, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# tests/suite/sh2o_gte_test_suite.c, native: it needs only the three entries
+# of the GTE register file and command dispatch (no C library, no libgcc
+# helper). Format: the header of scripts/sh2_cross.sh.
+source tests/suite/sh2o_gte_test_suite.c
+flags -DSH2O_REQUIRE_SH2=1 -Itests/suite
+levels -Os -O2
+undefined sh2o_gte_read sh2o_gte_write sh2o_gte_command

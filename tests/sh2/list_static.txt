@@ -1,0 +1,22 @@
+# Static check of the list family, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# src/sh2o_list.c (one build: the file has no build switch). Measured in the
+# pinned image at -Os and -O2:
+# - undefined: sh2o_gte_mvmva only (the one call of the list).
+# - globals: sh2o_gte_mvmva_list only.
+# - no MAC.W here: MVMVA reaches it in the gte object.
+# - no T-bit set, no SR write, no GBR, no divide step, no constant in the
+#   SH-2 divider area.
+# Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_list.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined exactly sh2o_gte_mvmva
+globals sh2o_gte_mvmva_list 1
+functions sh2o_gte_mvmva_list
+count * mac.w 0
+forbid * ^sets
+forbid * ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid * ^ldc(\.l)? [^ ]*,sr
+forbid * ^div(0s|0u|1)
+forbid * gbr

@@ -1,0 +1,3 @@
+# The psyz commit that external/psyz must point to, and the date of the pin.
+# psyz is test-only: read in place by tests, never linked or copied (update = none).
+3413eeb8cd16bfcc3c5a7041bd1392b31bc1c5cc 2026-11-21

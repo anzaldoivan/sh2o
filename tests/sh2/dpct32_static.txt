@@ -1,0 +1,15 @@
+# Static check of the 32-bit DPCT kernel, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# The native build of src/sh2o_gte_dpct32.c: no undefined symbol (no libgcc
+# helper), the one function sh2o_gte_dpct32, no call, no MAC.L or MAC.W, no SR
+# write. The count line (no mac.l) is the one the plant raises to 1.
+# Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_gte_dpct32.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined none
+functions sh2o_gte_dpct32
+calls none
+count * mac.l 0
+forbid * ^mac\.
+forbid * ^ldc(\.l)? [^ ]*,sr

@@ -1,0 +1,17 @@
+# Static check of the gte family, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# The native build of src/sh2o_gte.c: one undefined symbol, the DPCT kernel
+# sh2o_gte_dpct32 that sh2o_gte_dpct selects (no libgcc helper);
+# MAC.W only through the k dispatch of sh2o_k_mvb3 (9, measured in the pinned
+# image at -Os and -O2); no T-bit set, no GBR, no SR write, no divide step, no
+# constant in the SH-2 divider area. Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_gte.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined exactly sh2o_gte_dpct32
+count * mac.w 9
+forbid * ^sets
+forbid * gbr
+forbid * ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid * ^ldc(\.l)? [^ ]*,sr
+forbid * ^div(0s|0u|1)

@@ -1,3 +1,7 @@
 [submodule "external/SH2ZAM"]
 	path = external/SH2ZAM
 	url = https://github.com/lamb2k/SH2ZAM.git
+[submodule "external/psyz"]
+	path = external/psyz
+	url = https://github.com/Xeeynamo/psyz.git
+	update = none

@@ -1,0 +1,11 @@
+# Static check of the fixed family, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# The native build of src/sh2o_fixed.c: one dmuls.l in sh2o_mul_q12, no call,
+# no undefined symbol. Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_fixed.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -O2
+undefined none
+functions sh2o_mul_q12 sh2o_lim_ir
+calls none
+count sh2o_mul_q12 dmuls.l 1

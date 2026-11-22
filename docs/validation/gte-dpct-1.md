@@ -1,0 +1,25 @@
+# Validation record: 2026-11-22 (host and SH-2 model, gte-dpct-1)
+
+Function `sh2o_gte_dpct` in `sh2o/gte.h`, opcode `2Ah` (DPCT): DPCS three times on RGB0, the bottom of the colour FIFO, in place of RGBC ([GTE.md](../GTE.md#dpct)). The dispatch `sh2o_gte_command` (record [gte-command-1](gte-command-1.md)) calls it; a caller can also call it with the word. The other records are listed in [VALIDATION.md](../VALIDATION.md).
+
+- **Pins:** SH2ZAM `7f99eb70`, Yabause `7e38821d`, sh2eb-elf-gcc 13.2.0 in the pinned Yaul image (`ijacquez/yaul@sha256:b6d27220…`). Host compiler: GCC 16.2.1.
+- **Source of the answers:** `scripts/gte_model.py`, written from psx-spx (problemkaputt.de/psx-spx.htm, "COP2 0F8002Ah - 17 Cycles - DPCT", read 2026-11-22), as the C is. Corroboration: the 100 DPCT cases of ps1-tests give 0 differences between their expected values and the model (pinned in the test `gte_sources`: 100 cases, 0 differences), and 0 between the model and the C (`gte_sources`); the software GTE of psyz (`libgte.c:2321`) gives 0 differences on the DPCT command over those 100 cases. The private recordings hold 0 DPCT pairs, so they add no DPCT corroboration.
+- **Host, exact:** `make test` passes (0 of 98 tests failed; the tests that need the private inputs skip). The test `gte` gives the 13 `cmd` vectors of opcode `2Ah` of `tests/gte_oracle.h` (190 for all GTE functions) through `sh2o_gte_write`, `sh2o_gte_command` and `sh2o_gte_read`, with zero differences. It also runs each of them through `sh2o_gte_dpct` with the vector's word: `gte: sh2o_gte_dpct: 13 vectors, 0 differences`. The suite (3,840 cases, digest `0xA50D51B1`) has no DPCT case: its op list is pinned.
+- **Host, other sources:** the test `gte_sources` gives 76,938 cases (edges 13,898, LCG 61,440, ps1-tests 1,600) of all the commands through `tests/test_gte.c --driver` and the Python model: 0 differences on all 64 registers, FLAG included. Of these, 4,541 are DPCT cases (345 edges, 4,096 LCG, 100 ps1-tests).
+- **Mutants:** `dpct_reads_rgbc` (reads RGBC in place of RGB0) and `dpct_fifo_not_advanced` (reads RGB0 once). The test `gte` finds each: `gte: dpct_reads_rgbc: first difference in vector 114 (cmd), result byte 106: expected 0x2d, got 0x5d`; `gte: dpct_fifo_not_advanced: first difference in vector 114 (cmd), result byte 106: expected 0x2d, got 0x9b`. `gte_sources` pins their counts: 4,540 and 4,198 cases differ. The gte mutants that also change DPCT cases: `shift_11`, `shift_13`, `dropped_colour_push` ([VALIDATION.md](../VALIDATION.md#2026-11-22-dpct-modelled)).
+- **SH-2 cross build:** `make cross`, green; the manifest `tests/sh2/objects.sha256` matches (48 files). DPCT is in `src/sh2o_gte.c`, so the specs of the gte object hold for it (record [gte-dpcs-1](gte-dpcs-1.md)).
+- **SH-2 model, exact:** `make sh2-model`. In the native and the portable program, the 13 DPCT `cmd` vectors give zero differences through `sh2o_gte_command` (190 of 190 vectors exact in each program). For each of them the harness also calls `sh2o_gte_dpct` with the vector's word on the vector's input image: the 64 registers equal `sh2o_gte_command` with the same word and the vector's result (0 of 13 differ). The bridge table holds the entry; program sha256: native `ad5d4335…`, portable `2c82a705…`.
+- **SR.S:** with SR.S = 1 each program gives 0 of 160 `cmd` vectors that differ (0 of 147 before DPCT): the 13 DPCT vectors add 0. The entry comparison with SR.S = 1: 0 of 13 differ, and the 13 vector results hold. DPCT is C and does not call `sh2o_k_mvb3`.
+- **Planted word:** with `--plant-entry` the harness compares `sh2o_gte_dpct` with `sh2o_gte_command` and the vector's word with sf flipped. In the native program, 13 of 13 vectors differ at SR.S 0 and at SR.S 1, and the run stops with exit 1.
+- **MODELLED cycles:** one call of `sh2o_gte_command` (row DPCT) and one call of `sh2o_gte_dpct` (row eDPCT), from the entry to the return, over the 13 DPCT vectors, without the register writes and reads. Source: [benchmarks/gte-model/README.md](../../benchmarks/gte-model/README.md). These are not Saturn timings.
+
+| Program | Opcode | Call | Cycles min | Cycles max | Cycles mean | Instructions mean | Vectors |
+|---|---|---|---|---|---|---|---|
+| native | `2Ah` | DPCT (`sh2o_gte_command`) | 1576 | 1786 | 1704.38 | 1551.85 | 13 |
+| native | `2Ah` | eDPCT (`sh2o_gte_dpct`) | 1560 | 1770 | 1688.38 | 1537.85 | 13 |
+
+The portable rows are the same as the native rows.
+
+- **Private recordings:** `gte_recordings` 79,802 cases (2,864 clean pairs, 0 of them DPCT), 0 differences; the mutant counts and `psyz_gte_recordings` (4,464 cases, 22,902 registers, 0 not explained) are in [VALIDATION.md](../VALIDATION.md#2026-11-22-dpct-modelled).
+- **2026-11-22, later:** the SH-2 entry `sh2o_gte_dpct` now selects the 32-bit kernel (record [gte-dpct32-1](gte-dpct32-1.md)); the figures above are the C path, which the portable build keeps.
+- **Not done:** a console run; a run on an emulator with caches and wait states; a game frame through the entry.

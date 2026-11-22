@@ -1,0 +1,17 @@
+# Static check of the prepared MVMVA, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# The native build of src/sh2o_gte_prepared.c: one undefined symbol, its
+# fallback sh2o_gte_mvmva (no libgcc helper, no memcpy or memset); the two
+# functions; the kernel inlined in the entry (nine MAC.L, no MAC.W); one SR
+# read (STC SR) and no SR write. Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_gte_prepared.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined exactly sh2o_gte_mvmva
+functions sh2o_gte_prepared_load sh2o_gte_mvmva_prepared
+count sh2o_gte_mvmva_prepared mac.l 9
+count sh2o_gte_prepared_load mac.l 0
+count sh2o_gte_mvmva_prepared stc 1
+count sh2o_gte_prepared_load stc 0
+forbid * ^ldc(\.l)? [^ ]*,sr
+forbid * ^mac\.w

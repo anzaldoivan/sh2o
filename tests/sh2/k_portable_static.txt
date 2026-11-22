@@ -1,0 +1,11 @@
+# Static check of the k family's portable build, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# tests/sh2/k_portable_probe.c built with SH2O_FORCE_PORTABLE: no undefined
+# symbol and no MAC.W anywhere. At -Os GCC 13.2 keeps the C helpers of
+# clz32 and unr_recip out of line, so no function list. Format: the header of
+# scripts/sh2_cross.sh.
+source tests/sh2/k_portable_probe.c
+flags -DSH2O_FORCE_PORTABLE=1
+levels -Os -O2
+undefined none
+forbid * mac\.w

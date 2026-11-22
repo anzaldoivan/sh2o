@@ -1,0 +1,9 @@
+# Static check of the psyq suite object, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# tests/suite/sh2o_psyq_test_suite.c, native: it needs only the 19 bodies, the
+# break hook and two entries of the GTE register file (no C library, no libgcc
+# helper: the suite has no divide). Format: the header of scripts/sh2_cross.sh.
+source tests/suite/sh2o_psyq_test_suite.c
+flags -DSH2O_REQUIRE_SH2=1 -Itests/suite
+levels -Os -O2
+undefined exactly sh2o_gte_read sh2o_gte_write sh2o_psyq_break sh2o_psyq_ApplyMatrix sh2o_psyq_ApplyMatrixLV sh2o_psyq_CompMatrix sh2o_psyq_InitGeom sh2o_psyq_PopMatrix sh2o_psyq_PushMatrix sh2o_psyq_RotTrans sh2o_psyq_SetBackColor sh2o_psyq_SetColorMatrix sh2o_psyq_SetFarColor sh2o_psyq_SetFogNearFar sh2o_psyq_SetGeomOffset sh2o_psyq_SetGeomScreen sh2o_psyq_SetLightMatrix sh2o_psyq_SetRotMatrix sh2o_psyq_SetTransMatrix sh2o_psyq_TransMatrix sh2o_psyq_TransposeMatrix sh2o_psyq_ratan2
