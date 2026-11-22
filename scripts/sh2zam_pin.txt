@@ -1,0 +1,3 @@
+# The SH2ZAM commit that external/SH2ZAM must point to, and the date of the pin.
+# A re-pin changes this line, with a new date, in the same commit as the gitlink.
+7f99eb70ccaef83da11668fcaa80dcb74396ab7a 2026-11-21

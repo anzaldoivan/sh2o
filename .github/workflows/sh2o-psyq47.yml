@@ -1,0 +1,31 @@
+# The PsyQ 4.7 archive against the game's libgte: make psyq47 with GCC fetches
+# the archive (a failed fetch skips the job with a summary line), builds both
+# variants, runs the tests with the label psyq47 and writes the report to the
+# step summary. No cache: the archive is fetched on each run and never kept.
+name: sh2o psyq47
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  psyq47:
+    name: 4.7 archive = game libgte
+    runs-on: ubuntu-24.04
+    # A fresh build of both variants and the run take 38 s on a local machine
+    # (11.6 s with the builds current); 10 is the minimum, as in sh2o proofs.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: make psyq47 CC=gcc
+        run: make psyq47 CC=gcc
+      - name: Keep the test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psyq47-gcc
+          path: build/**/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore

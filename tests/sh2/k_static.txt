@@ -1,0 +1,65 @@
+# Static check of the k family, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# The native build of tests/sh2/k_probe.c: every kernel inlined (no call, no
+# undefined symbol); three MAC.W per dot product in the _w and _w2 forms, none in
+# the C references; one SR read (STC SR) in each _w2 form; no T-bit set, no GBR,
+# no SR write, no divide step, no constant in the SH-2 register area. Format: the
+# header of scripts/sh2_cross.sh.
+source tests/sh2/k_probe.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined none
+functions probe_c probe_w probe_mvb3_c probe_mvb3_w probe_gpf3_c probe_gpf3_w probe_gpl3_c probe_gpl3_w probe_w2 probe_mvb3_w2 probe_gpf3_w2 probe_gpl3_w2
+calls none
+count probe_w mac.w 3
+count probe_mvb3_w mac.w 9
+count probe_gpf3_w mac.w 3
+count probe_gpl3_w mac.w 3
+count probe_gpf3_c mac.w 0
+count probe_gpl3_c mac.w 0
+count probe_w2 mac.w 3
+count probe_mvb3_w2 mac.w 9
+count probe_gpf3_w2 mac.w 3
+count probe_gpl3_w2 mac.w 3
+count probe_w2 stc 1
+count probe_mvb3_w2 stc 1
+count probe_gpf3_w2 stc 1
+count probe_gpl3_w2 stc 1
+forbid probe_w ^sets
+forbid probe_w gbr
+forbid probe_w ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_mvb3_w ^sets
+forbid probe_mvb3_w gbr
+forbid probe_mvb3_w ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_mvb3_w ^ldc(\.l)? [^ ]*,sr
+forbid probe_mvb3_w ^div(0s|0u|1)
+forbid probe_gpf3_w ^sets
+forbid probe_gpf3_w gbr
+forbid probe_gpf3_w ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_gpf3_w ^ldc(\.l)? [^ ]*,sr
+forbid probe_gpf3_w ^div(0s|0u|1)
+forbid probe_gpl3_w ^sets
+forbid probe_gpl3_w gbr
+forbid probe_gpl3_w ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_gpl3_w ^ldc(\.l)? [^ ]*,sr
+forbid probe_gpl3_w ^div(0s|0u|1)
+forbid probe_w2 ^sets
+forbid probe_w2 gbr
+forbid probe_w2 ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_w2 ^ldc(\.l)? [^ ]*,sr
+forbid probe_w2 ^div(0s|0u|1)
+forbid probe_mvb3_w2 ^sets
+forbid probe_mvb3_w2 gbr
+forbid probe_mvb3_w2 ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_mvb3_w2 ^ldc(\.l)? [^ ]*,sr
+forbid probe_mvb3_w2 ^div(0s|0u|1)
+forbid probe_gpf3_w2 ^sets
+forbid probe_gpf3_w2 gbr
+forbid probe_gpf3_w2 ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_gpf3_w2 ^ldc(\.l)? [^ ]*,sr
+forbid probe_gpf3_w2 ^div(0s|0u|1)
+forbid probe_gpl3_w2 ^sets
+forbid probe_gpl3_w2 gbr
+forbid probe_gpl3_w2 ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid probe_gpl3_w2 ^ldc(\.l)? [^ ]*,sr
+forbid probe_gpl3_w2 ^div(0s|0u|1)

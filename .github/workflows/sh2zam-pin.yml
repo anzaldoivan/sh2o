@@ -1,0 +1,23 @@
+# SH2ZAM's own tests, built without a change from the pinned submodule, so
+# that the SH2ZAM parts sh2o uses stay checked at the pin.
+name: SH2ZAM tests at the pin
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sh2zam:
+    name: SH2ZAM tests (${{ matrix.cc }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - run: make pin-check
+      - run: make sh2zam-tests CC=${{ matrix.cc }}

@@ -1,0 +1,23 @@
+# Static check of the psyq family, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# src/sh2o_psyq.c (one build: the file has no build switch). Measured in the
+# pinned image at -Os and -O2:
+# - undefined: the three entries of the GTE register file and command dispatch,
+#   and the libgcc signed divide (the one '/' of the file); no unsigned divide.
+# - globals: the break hook and the 19 bodies (20), each sh2o_psyq_.
+# - no MAC.W here: MVMVA reaches it in the gte object, through
+#   sh2o_gte_command.
+# - no T-bit set, no SR write, no divide step, no constant in the SH-2
+#   divider area. There is no forbid on GBR: the literal-pool word 0x00480012
+#   (the MVMVA command of RotTrans) disassembles as "stc gbr,r0".
+# Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_psyq.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined exactly __sdivsi3 sh2o_gte_command sh2o_gte_read sh2o_gte_write
+globals sh2o_psyq_ 20
+count * mac.w 0
+forbid * ^sets
+forbid * ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid * ^ldc(\.l)? [^ ]*,sr
+forbid * ^div(0s|0u|1)

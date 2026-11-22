@@ -1,0 +1,14 @@
+# Static check of the gte register file, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# The native build of src/sh2o_gte_regs.c: no undefined symbol and the same
+# forbidden instructions as gte_static.txt. Format: the header of
+# scripts/sh2_cross.sh.
+source src/sh2o_gte_regs.c
+flags -DSH2O_REQUIRE_SH2=1
+levels -Os -O2
+undefined none
+forbid * ^sets
+forbid * gbr
+forbid * ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid * ^ldc(\.l)? [^ ]*,sr
+forbid * ^div(0s|0u|1)

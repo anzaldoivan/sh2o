@@ -1,0 +1,11 @@
+# Static check of the delegate source in the default build, run by
+# scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# src/sh2o_zam.c without SH2O_ZAM (the default) compiles to one typedef: the
+# object has no undefined symbol, no global symbol and no code.
+# Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_zam.c
+levels -Os -O2
+undefined none
+globals sh2o_ 0
+count * mac.w 0

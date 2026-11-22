@@ -1,0 +1,37 @@
+# Checks that need no compiler: the written style, the generated oracle
+# headers, the SH2ZAM and psyz pins, and the public tree check.
+name: sh2o checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  style:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: make style
+  oracles:
+    name: oracle headers match their generators
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: make oracles-check
+  sh2zam-pin:
+    name: SH2ZAM and psyz submodules are at the pinned commits
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Fetch the psyz pin (test-only, no nested submodules)
+        run: git submodule update --init --checkout --depth 1 external/psyz
+      - run: make pin-check
+  public-check:
+    name: public tree check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: make public-check

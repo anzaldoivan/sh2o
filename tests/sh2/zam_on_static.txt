@@ -1,0 +1,14 @@
+# Static check of the delegate source with the option on, run by
+# scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# src/sh2o_zam.c with SH2O_ZAM=1 and SH2ZAM's headers (native: SH2Z_REQUIRE_SH2):
+# the undefined symbols are exactly the GTE core's and SH2ZAM's entries it calls,
+# its globals are the sh2o_zam_ entries and knobs, and it holds no MAC.
+# Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_zam.c
+flags -DSH2O_ZAM=1 -DSH2Z_REQUIRE_SH2=1 -Iexternal/SH2ZAM/saturn/include
+levels -Os -O2
+undefined exactly sh2o_gte_write sh2z_atan2 sh2z_mat33_transpose sh2z_mesh_view_init sh2z_muldiv sh2z_transform_plan_execute_mac sh2z_transform_plan_init
+globals sh2o_zam_ 8
+count * mac.l 0
+count * mac.w 0

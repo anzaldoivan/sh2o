@@ -1,0 +1,17 @@
+# Static check of the gte family with SH2O_MVB3_SWITCH=1, run by scripts/sh2_cross.sh (make cross).
+# Copyright (c) 2026 sh2o Contributors. MIT License.
+# src/sh2o_gte.c with the switch build: the MAC.W forms of mvb3, gpf3 and gpl3
+# are inlined, so 9 + 3 + 3 = 15 MAC.W (measured in the pinned image at -Os
+# and -O2); one undefined symbol, the DPCT kernel sh2o_gte_dpct32 (no libgcc
+# helper), and the same forbidden instructions as
+# gte_static.txt. Format: the header of scripts/sh2_cross.sh.
+source src/sh2o_gte.c
+flags -DSH2O_REQUIRE_SH2=1 -DSH2O_MVB3_SWITCH=1
+levels -Os -O2
+undefined exactly sh2o_gte_dpct32
+count * mac.w 15
+forbid * ^sets
+forbid * gbr
+forbid * ffffff(0[0-9a-f]|1[0-4])([^0-9a-f]|$)
+forbid * ^ldc(\.l)? [^ ]*,sr
+forbid * ^div(0s|0u|1)

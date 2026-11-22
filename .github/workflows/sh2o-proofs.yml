@@ -1,0 +1,31 @@
+# The long proofs of sh2o (the tests with the label proof): make proof-tests
+# with GCC. The job is short, so it runs on each push and pull request; a
+# paths filter would miss proof tests that are added later.
+name: sh2o proofs
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proofs:
+    name: proof-tests (gcc)
+    runs-on: ubuntu-24.04
+    # The build and the proofs take 15 s on a local machine; 10 is the minimum.
+    timeout-minutes: 10
+    env:
+      SH2O_REQUIRE_PSYZ: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the psyz pin (test-only, no nested submodules)
+        run: git submodule update --init --checkout --depth 1 external/psyz
+      - name: make proof-tests CC=gcc
+        run: make proof-tests CC=gcc
+      - name: Keep the test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofs-gcc
+          path: build/**/Testing/Temporary/LastTest.log
+          if-no-files-found: ignore
