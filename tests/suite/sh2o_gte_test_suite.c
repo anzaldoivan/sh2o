@@ -66,8 +66,7 @@ static uint32_t sh2o_gte_case(uint32_t i,uint32_t *x,sh2o_gte_t *g) {
         cmd=op|((d>>16)&1u)<<10|((d>>17)&1u)<<19;
         if(op==0x12u)
             cmd|=((d>>18)&3u)<<17|((d>>20)&3u)<<15|((d>>22)&3u)<<13;
-    }
-    else {
+    } else {
         uint32_t s=(i-SH2O_GTE_OPS*SH2O_GTE_PER_OP)&0xFFu;
         cmd=0x12u|(s&1u)<<10|((s>>1)&1u)<<19|((s>>2)&3u)<<13|((s>>4)&3u)<<15|((s>>6)&3u)<<17;
     }

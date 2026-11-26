@@ -22,20 +22,25 @@ extern "C" {
  * c[mx]: the rows of matrix mx (0 rotation r[32..36], 1 light r[40..44], 2 colour r[48..52]), each element
  * R SHL 4, row-major. pre[ts]: per row, MACH then MACL of t SHL 16 sign-extended to 64 bits (ts 0 translation
  * r[37..39], 1 back colour r[45..47], 2 none: zeros). ok[ts]: 1 when every |t| < 7FF40000h (ts 2: always 1). */
-typedef struct sh2o_gte_prepared
-{
+typedef struct sh2o_gte_prepared {
     int32_t c[3][9];
     uint32_t pre[3][6];
     uint8_t ok[3];
 } sh2o_gte_prepared_t;
 
-/* The parts of a shadow, for sh2o_gte_prepared_load. */
+/* The parts of a shadow, for sh2o_gte_prepared_load. Part bit: the rotation matrix. */
 #define SH2O_GTE_PREPARED_RT 1u
+/* Part bit: the light matrix. */
 #define SH2O_GTE_PREPARED_LIGHT 2u
+/* Part bit: the light colour matrix. */
 #define SH2O_GTE_PREPARED_COLOR 4u
+/* Part bit: the translation vector. */
 #define SH2O_GTE_PREPARED_TR 8u
+/* Part bit: the back colour. */
 #define SH2O_GTE_PREPARED_BK 16u
+/* Part bit: the zero translation (ts 2). */
 #define SH2O_GTE_PREPARED_NONE 32u
+/* All the part bits: the first load of a shadow. */
 #define SH2O_GTE_PREPARED_ALL 63u
 
 /* Contract tag gte-mvmva-prepared-1.
@@ -64,4 +69,4 @@ void sh2o_gte_mvmva_list_prepared(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)
 #ifdef __cplusplus
 }
 #endif
-#endif /* SH2O_GTE_PREPARED_H */
+#endif

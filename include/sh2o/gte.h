@@ -19,8 +19,7 @@ extern "C" {
 /* The register image, in register index order: r[0..31] data (MTC2/MFC2), r[32..63] control (CTC2/CFC2).
  * Storage holds the written words; 16-bit fields are the halves read by shifts (endian-neutral). Zero is a valid
  * state. Commands keep their results here; sh2o_gte_read() gives the MFC2/CFC2 view. */
-typedef struct sh2o_gte
-{
+typedef struct sh2o_gte {
     uint32_t r[64];
 } sh2o_gte_t;
 
@@ -90,4 +89,4 @@ void sh2o_gte_nrtpt(sh2o_gte_t *g);              /* RTPT with 0x4A280030 */
 #ifdef __cplusplus
 }
 #endif
-#endif /* SH2O_GTE_H */
+#endif

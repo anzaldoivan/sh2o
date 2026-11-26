@@ -13,8 +13,7 @@
 #include <stdint.h>
 
 /* hi:lo += p, p a signed 32-bit product. Forced inline: GCC 13.2 leaves it out of line at -Os (a call). */
-SH2OI_FORCE_INLINE void sh2oi_k_mac_c(uint32_t *hi,uint32_t *lo,int32_t p)
-{
+SH2OI_FORCE_INLINE void sh2oi_k_mac_c(uint32_t *hi,uint32_t *lo,int32_t p) {
     uint32_t u = (uint32_t)p;
     uint32_t c;
     *lo += u;
@@ -24,8 +23,7 @@ SH2OI_FORCE_INLINE void sh2oi_k_mac_c(uint32_t *hi,uint32_t *lo,int32_t p)
 
 /* Contract tag k-dot3b-1.
  * sh2o_k_dot3b: ((int64)tr << 12) + m[0]*v[0] + m[1]*v[1] + m[2]*v[2]; contract in sh2o/k.h */
-SH2OI_FORCE_INLINE int64_t sh2o_k_dot3b_c(const int16_t m[3],const int16_t v[3],int32_t tr)
-{
+SH2OI_FORCE_INLINE int64_t sh2o_k_dot3b_c(const int16_t m[3],const int16_t v[3],int32_t tr) {
     uint32_t lo = (uint32_t)tr << 12;                /* MACL: tr << 12 */
     uint32_t sx = 0u - ((uint32_t)tr >> 31);         /* all ones when tr < 0 */
     uint32_t hi = ((uint32_t)tr >> 20) | (sx << 12); /* MACH: tr >> 20, sign-extended (no libgcc shift) */
@@ -38,18 +36,15 @@ SH2OI_FORCE_INLINE int64_t sh2o_k_dot3b_c(const int16_t m[3],const int16_t v[3],
 /* Contract tag k-mvb3-1.
  * sh2o_k_mvb3: out[i] = ((int64)t[i] << 12) + row i . v, the rows from five words (sh2oi_mat's halves); contract in
  * sh2o/k.h */
-SH2OI_FORCE_INLINE void sh2o_k_mvb3_c(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3])
-{
+SH2OI_FORCE_INLINE void sh2o_k_mvb3_c(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]) {
     unsigned i;
     int16_t m[9];
-    for(i = 0; i < 4; i++)
-    {
+    for(i = 0; i < 4; i++) {
         m[2 * i] = (int16_t)(uint16_t)w[i];             /* low half */
         m[2 * i + 1] = (int16_t)(uint16_t)(w[i] >> 16); /* high half */
     }
     m[8] = (int16_t)(uint16_t)w[4];
-    for(i = 0; i < 3; i++)
-    { /* sh2o_k_dot3b_c's row, written once (one call site: inlined at -Os) */
+    for(i = 0; i < 3; i++) { /* sh2o_k_dot3b_c's row, written once (one call site: inlined at -Os) */
         const int16_t *r = &m[3 * i];
         uint32_t lo = (uint32_t)t[i] << 12;
         uint32_t hi = ((uint32_t)t[i] >> 20) | ((0u - ((uint32_t)t[i] >> 31)) << 12);
@@ -62,12 +57,10 @@ SH2OI_FORCE_INLINE void sh2o_k_mvb3_c(const uint32_t w[5],const int16_t v[3],con
 
 /* Contract tag k-gpf3-1.
  * sh2o_k_gpf3: out[i] = IR(i+1) * IR0, the IRs the low halves of w[0..3] (IR0..IR3 words); contract in sh2o/k.h */
-SH2OI_FORCE_INLINE void sh2o_k_gpf3_c(const uint32_t w[4],int64_t out[3])
-{
+SH2OI_FORCE_INLINE void sh2o_k_gpf3_c(const uint32_t w[4],int64_t out[3]) {
     int32_t ir0 = (int16_t)(uint16_t)w[0];
     unsigned i;
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         int32_t p = (int16_t)(uint16_t)w[1 + i] * ir0; /* |p| <= 2^30 */
         out[i] = (int64_t)(((uint64_t)(0u - ((uint32_t)p >> 31)) << 32) | (uint32_t)p);
     }
@@ -75,12 +68,10 @@ SH2OI_FORCE_INLINE void sh2o_k_gpf3_c(const uint32_t w[4],int64_t out[3])
 
 /* Contract tag k-gpl3-1.
  * sh2o_k_gpl3: out[i] = ((int64)mac[i] << 12 when sf, else mac[i]) + IR(i+1) * IR0; contract in sh2o/k.h */
-SH2OI_FORCE_INLINE void sh2o_k_gpl3_c(const uint32_t w[4],const uint32_t mac[3],unsigned sf,int64_t out[3])
-{
+SH2OI_FORCE_INLINE void sh2o_k_gpl3_c(const uint32_t w[4],const uint32_t mac[3],unsigned sf,int64_t out[3]) {
     int32_t ir0 = (int16_t)(uint16_t)w[0];
     unsigned i;
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         uint32_t sx = 0u - (mac[i] >> 31); /* the addend's sign word */
         uint32_t lo = sf ? mac[i] << 12 : mac[i];
         uint32_t hi = sf ? (mac[i] >> 20) | (sx << 12) : sx;
@@ -91,22 +82,18 @@ SH2OI_FORCE_INLINE void sh2o_k_gpl3_c(const uint32_t w[4],const uint32_t mac[3],
 
 /* Contract tag k-clz32-1.
  * sh2o_k_clz32: leading zero count of v, 0..32 (32 for v = 0); contract in sh2o/k.h */
-SH2OI_INLINE unsigned sh2o_k_clz32_c(uint32_t v)
-{
-    static const uint8_t clz4[16] = {4,3,2,2,1,1,1,1,0,0,0,0,0,0,0,0};
+SH2OI_INLINE unsigned sh2o_k_clz32_c(uint32_t v) {
+    static const uint8_t clz4[16] SH2OI_RODATA(sh2oi_k_clz4) = {4,3,2,2,1,1,1,1,0,0,0,0,0,0,0,0};
     unsigned n = 0;
-    if(v < 0x10000u)
-    {
+    if(v < 0x10000u) {
         n += 16;
         v <<= 16;
     }
-    if(v < 0x1000000u)
-    {
+    if(v < 0x1000000u) {
         n += 8;
         v <<= 8;
     }
-    if(v < 0x10000000u)
-    {
+    if(v < 0x10000000u) {
         n += 4;
         v <<= 4;
     }
@@ -115,11 +102,10 @@ SH2OI_INLINE unsigned sh2o_k_clz32_c(uint32_t v)
 
 /* Contract tag k-unr-recip-1.
  * sh2o_k_unr_recip: the UNR reciprocal of a normalised divisor d (8000h..FFFFh); contract in sh2o/k.h */
-SH2OI_INLINE uint32_t sh2o_k_unr_recip_c(uint32_t d)
-{
+SH2OI_INLINE uint32_t sh2o_k_unr_recip_c(uint32_t d) {
     /* unr[i] = max(0, (40000h / (i + 100h) + 1) / 2 - 101h), i 0..100h (psx-spx, GTE division); generated from
      * the formula */
-    static const uint8_t unr[0x101] = {
+    static const uint8_t unr[0x101] SH2OI_RODATA(sh2oi_k_unr) = {
         0xFF,0xFD,0xFB,0xF9,0xF7,0xF5,0xF3,0xF1,0xEF,0xEE,0xEC,0xEA,0xE8,0xE6,0xE4,0xE3,0xE1,0xDF,
         0xDD,0xDC,0xDA,0xD8,0xD6,0xD5,0xD3,0xD1,0xD0,0xCE,0xCD,0xCB,0xC9,0xC8,0xC6,0xC5,0xC3,0xC1,
         0xC0,0xBE,0xBD,0xBB,0xBA,0xB8,0xB7,0xB5,0xB4,0xB2,0xB1,0xB0,0xAE,0xAD,0xAB,0xAA,0xA9,0xA7,
@@ -143,10 +129,9 @@ SH2OI_INLINE uint32_t sh2o_k_unr_recip_c(uint32_t d)
 
 /* Contract tag k-unr-div-1.
  * sh2o_k_unr_div: the GTE's RTPS/RTPT divide for h < 2 sz; contract in sh2o/k.h */
-SH2OI_INLINE uint32_t sh2o_k_unr_div_c(uint32_t h,uint32_t sz)
-{
+SH2OI_INLINE uint32_t sh2o_k_unr_div_c(uint32_t h,uint32_t sz) {
     /* 1 << z by table: the SH-2 has no variable shift instruction (gcc calls a libgcc helper) */
-    static const uint32_t pow2[16] = {1,2,4,8,0x10,0x20,0x40,0x80,
+    static const uint32_t pow2[16] SH2OI_RODATA(sh2oi_k_pow2) = {1,2,4,8,0x10,0x20,0x40,0x80,
                                     0x100,0x200,0x400,0x800,0x1000,0x2000,0x4000,0x8000};
     uint32_t f = pow2[(sh2o_k_clz32_c(sz) - 16u) & 15u];         /* normalisation: sz << z in 8000h..FFFFh */
     uint64_t p = (uint64_t)(h * f) * sh2o_k_unr_recip_c(sz * f); /* 32x32 widening */
@@ -159,4 +144,4 @@ SH2OI_INLINE uint32_t sh2o_k_unr_div_c(uint32_t h,uint32_t sz)
     return q > 0x1FFFFu ? 0x1FFFFu : q;
 }
 
-#endif /* SH2O_K_SW_INL_H */
+#endif

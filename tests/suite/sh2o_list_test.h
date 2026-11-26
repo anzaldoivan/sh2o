@@ -12,6 +12,9 @@
 
 #include "sh2o/list.h"
 #include "sh2o_gte_test.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SH2O_LIST_RUNS 256u
 #define SH2O_LIST_MAX 16u
@@ -25,4 +28,7 @@
 int sh2o_list_test_suite(void);
 void sh2o_list_test_counts(uint32_t c[5]);
 
-#endif /* SH2O_LIST_TEST_H */
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -11,6 +11,9 @@
 #include <stdint.h>
 
 #include "sh2o/k.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SH2O_VEC_EDGE 109375u /* 7 tr x 125 m x 125 v */
 #define SH2O_VEC_RANDOM 4096u
@@ -116,4 +119,7 @@ void sh2o_k_test_dot3b_part(uint32_t first,uint32_t n,uint32_t s[2]);
 void sh2o_k_test_mvb3_part(unsigned which,uint32_t first,uint32_t n,uint32_t s[2]);
 void sh2o_k_test_gp3_part(unsigned which,uint32_t first,uint32_t n,uint32_t s[3]);
 
-#endif /* SH2O_K_TEST_H */
+#ifdef __cplusplus
+}
+#endif
+#endif

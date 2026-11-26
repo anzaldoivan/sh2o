@@ -57,23 +57,19 @@ typedef int sh2oi_zam_unit; /* keeps the unit non-empty when SH2O_ZAM is 0 (ISO 
 int sh2o_zam_bypass;
 uint32_t sh2o_zam_delegated,sh2o_zam_refused;
 
-static uint32_t sh2oi_zam_abs(int32_t a)
-{
+static uint32_t sh2oi_zam_abs(int32_t a) {
     return a < 0 ? 0u - (uint32_t)a : (uint32_t)a;
 }
 
 /* 1 when every entry is in s16 range and each row passes 16*S + 65536|t| <= gate */
-static int sh2oi_zam_domain(const int32_t m[3][3],const int32_t v[3],const int32_t t[3])
-{
+static int sh2oi_zam_domain(const int32_t m[3][3],const int32_t v[3],const int32_t t[3]) {
     unsigned i,j;
     for(j = 0; j < 3; j++)
         if(sh2oi_zam_abs(v[j]) > 0x8000u)
             return 0;
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         uint64_t s = 0;
-        for(j = 0; j < 3; j++)
-        {
+        for(j = 0; j < 3; j++) {
             if(sh2oi_zam_abs(m[i][j]) > 0x8000u)
                 return 0;
             s += (uint64_t)(sh2oi_zam_abs(m[i][j]) * sh2oi_zam_abs(v[j])); /* each <= 2^30 */
@@ -85,8 +81,7 @@ static int sh2oi_zam_domain(const int32_t m[3][3],const int32_t v[3],const int32
 }
 
 /* Contract tag zam-mac3-1. Contract in sh2o/zam_experimental.h. */
-int sh2o_zam_mac3(const int32_t m[3][3],const int32_t v[3],const int32_t t[3],int32_t mac[3])
-{
+int sh2o_zam_mac3(const int32_t m[3][3],const int32_t v[3],const int32_t t[3],int32_t mac[3]) {
     sh2z_mat34_t rows;
     sh2z_vec3_t point,out;
     sh2z_mesh_view_t view;
@@ -94,13 +89,11 @@ int sh2o_zam_mac3(const int32_t m[3][3],const int32_t v[3],const int32_t t[3],in
     unsigned i,j;
     if(sh2o_zam_bypass)
         return 0;
-    if(!sh2oi_zam_domain(m,v,t))
-    {
+    if(!sh2oi_zam_domain(m,v,t)) {
         sh2o_zam_refused++;
         return 0;
     }
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         for(j = 0; j < 3; j++)
             rows.m[i][j] = (int32_t)((uint32_t)m[i][j] << SH2OI_ZAM_ROW_SHIFT);
 #if SH2O_MUTANT == 3
@@ -116,8 +109,7 @@ int sh2o_zam_mac3(const int32_t m[3][3],const int32_t v[3],const int32_t t[3],in
 #if SH2O_MUTANT != 2
         || !plan.fast_path
 #endif
-        || !sh2z_transform_plan_execute_mac(&out,&plan,0,1))
-    {
+        || !sh2z_transform_plan_execute_mac(&out,&plan,0,1)) {
         sh2o_zam_refused++;
         return 0;
     }
@@ -128,8 +120,7 @@ int sh2o_zam_mac3(const int32_t m[3][3],const int32_t v[3],const int32_t t[3],in
     return 1;
 }
 
-static int32_t sh2oi_zam_s16(uint32_t w)
-{
+static int32_t sh2oi_zam_s16(uint32_t w) {
     return (int32_t)((w & 0xFFFFu) ^ 0x8000u) - 0x8000;
 }
 
@@ -138,8 +129,7 @@ static int32_t sh2oi_zam_s16(uint32_t w)
  * point and SH2ZAM's MAC executor gives every item's MAC as zam-mac3-1 does. The GTE core's tail per item: MAC1-3,
  * IR1-3 saturated (lm) with FLAG 24-22, FLAG the last item's (sh2oi_set_mac_ir, sh2oi_end). */
 /* Contract tag zam-mvmva-list-1. Contract in sh2o/zam_experimental.h. */
-int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsigned n,uint32_t (*out)[6])
-{
+int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsigned n,uint32_t (*out)[6]) {
     static const unsigned mbase[3] = {32,40,48};
     static const uint32_t irbit[3] = {1u << 24,1u << 23,1u << 22};
     sh2z_vec3_t pts[SH2O_ZAM_LIST_MAX],res[SH2O_ZAM_LIST_MAX];
@@ -152,8 +142,7 @@ int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsign
     unsigned mx = cmd >> 17 & 3u,vx = cmd >> 15 & 3u,cv = cmd >> 13 & 3u,lm = cmd >> 10 & 1u,k,i,j;
     if(sh2o_zam_bypass)
         return 0;
-    if(!(cmd >> 19 & 1u) || (cmd & 0x3Fu) != 0x12u || mx == 3u || vx != 0u || cv == 2u || n > SH2O_ZAM_LIST_MAX)
-    {
+    if(!(cmd >> 19 & 1u) || (cmd & 0x3Fu) != 0x12u || mx == 3u || vx != 0u || cv == 2u || n > SH2O_ZAM_LIST_MAX) {
         sh2o_zam_refused++;
         return 0;
     }
@@ -172,8 +161,7 @@ int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsign
     if(cv < 2u)
         for(i = 0; i < 3; i++)
             t[i] = (int32_t)r[(cv ? 45u : 37u) + i];
-    for(k = 0; k < n; k++)
-    {
+    for(k = 0; k < n; k++) {
         int32_t p[3];
         p[0] = sh2oi_zam_s16(v[k][0]);
         p[1] = sh2oi_zam_s16(v[k][0] >> 16);
@@ -185,40 +173,32 @@ int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsign
             if((int32_t)sh2oi_zam_abs(p[j]) > vmax[j])
                 vmax[j] = (int32_t)sh2oi_zam_abs(p[j]);
     }
-    if(!sh2oi_zam_domain((const int32_t (*)[3])m,vmax,t))
-    {
+    if(!sh2oi_zam_domain((const int32_t (*)[3])m,vmax,t)) {
         sh2o_zam_refused++;
         return 0;
     }
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         for(j = 0; j < 3; j++)
             rows.m[i][j] = (int32_t)((uint32_t)m[i][j] << SH2OI_ZAM_ROW_SHIFT);
         rows.m[i][3] = t[i];
     }
     if(!sh2z_mesh_view_init(&view,pts,n) || !sh2z_transform_plan_init(&plan,&view,&rows) || !plan.fast_path ||
-        !sh2z_transform_plan_execute_mac(res,&plan,0,n))
-    {
+        !sh2z_transform_plan_execute_mac(res,&plan,0,n)) {
         sh2o_zam_refused++;
         return 0;
     }
-    for(k = 0; k < n; k++)
-    {
+    for(k = 0; k < n; k++) {
         int32_t mac[3];
         mac[0] = res[k].x;
         mac[1] = res[k].y;
         mac[2] = res[k].z;
         flag = 0;
-        for(i = 0; i < 3; i++)
-        {
+        for(i = 0; i < 3; i++) {
             int32_t ir = mac[i];
-            if(ir < (lm ? 0 : -0x8000))
-            {
+            if(ir < (lm ? 0 : -0x8000)) {
                 flag |= irbit[i];
                 ir = lm ? 0 : -0x8000;
-            }
-            else if(ir > 0x7FFF)
-            {
+            } else if(ir > 0x7FFF) {
                 flag |= irbit[i];
                 ir = 0x7FFF;
             }
@@ -229,8 +209,7 @@ int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsign
     k = n - 1u;
     r[0] = v[k][0];
     r[1] = v[k][1];
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         r[9 + i] = out[k][i];
         r[25 + i] = out[k][3 + i];
     }
@@ -241,15 +220,13 @@ int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsign
 
 /* SH2ZAM's angle (65536 per turn) to ratan2's 4096 per turn, signed as ratan2 */
 /* Contract tag zam-ratan2-1. Contract in sh2o/zam_experimental.h. */
-int32_t sh2o_zam_ratan2(int32_t y,int32_t x)
-{
+int32_t sh2o_zam_ratan2(int32_t y,int32_t x) {
     int32_t t = (int32_t)(((uint32_t)sh2z_atan2(y,x) + 8u) >> 4 & 4095u);
     return t > 0x800 || (t == 0x800 && y < 0) ? t - 0x1000 : t;
 }
 
 /* Contract tag zam-transposematrix-1. Contract in sh2o/zam_experimental.h. */
-sh2o_psyq_matrix_t *sh2o_zam_TransposeMatrix(const sh2o_psyq_matrix_t *m0,sh2o_psyq_matrix_t *m1)
-{
+sh2o_psyq_matrix_t *sh2o_zam_TransposeMatrix(const sh2o_psyq_matrix_t *m0,sh2o_psyq_matrix_t *m1) {
     sh2z_mat33_t a,b;
     unsigned i,j;
     for(i = 0; i < 3; i++)
@@ -265,8 +242,7 @@ sh2o_psyq_matrix_t *sh2o_zam_TransposeMatrix(const sh2o_psyq_matrix_t *m0,sh2o_p
     return m1;
 }
 
-static int sh2oi_zam_fits(int64_t v)
-{
+static int sh2oi_zam_fits(int64_t v) {
 #if SH2O_MUTANT == 5
     (void)v;
     return 1;
@@ -276,8 +252,7 @@ static int sh2oi_zam_fits(int64_t v)
 }
 
 /* Contract tag zam-setfognearfar-1. Contract in sh2o/zam_experimental.h. */
-int sh2o_zam_SetFogNearFar(sh2o_gte_t *g,int32_t a,int32_t b,int32_t h)
-{
+int sh2o_zam_SetFogNearFar(sh2o_gte_t *g,int32_t a,int32_t b,int32_t h) {
     int32_t d = (int32_t)((uint32_t)b - (uint32_t)a),q1,q2,q3;
     if(d < 100 || h == 0 || !sh2oi_zam_fits(-(int64_t)a * b) || !sh2oi_zam_fits((int64_t)b * 4096))
         return 0;

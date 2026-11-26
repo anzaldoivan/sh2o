@@ -220,13 +220,11 @@ void sh2o_psyq_test_case_draw(uint32_t i,uint32_t s[2],sh2o_psyq_test_case_t *c)
         c->a[0]=(int32_t)(sh2o_psyq_lcg(&x)&0xFFFFu)-0x8000;
         c->a[1]=(int32_t)(sh2o_psyq_lcg(&x)&0xFFFFu)-0x8000;
         c->a[2]=(int32_t)(sh2o_psyq_lcg(&x)&0x3FFu);
-    }
-    else if(b==B_RATAN2) {
+    } else if(b==B_RATAN2) {
         uint32_t d1=sh2o_psyq_lcg(&x),d2=sh2o_psyq_lcg(&x),d3=sh2o_psyq_lcg(&x);
         c->a[0]=sh2o_psyq_mag(d1,d3,d3&0x20u);
         c->a[1]=sh2o_psyq_mag(d2,d3>>8,d3&0x2000u);
-    }
-    else {
+    } else {
         for(k=0;k<sh2o_psyq_ints[b];k++)
             c->a[k]=(int32_t)sh2o_psyq_lcg(&x);
     }

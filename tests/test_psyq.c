@@ -141,69 +141,71 @@ static int driver(void) {
         na=(unsigned)strtoul(strtok_r(NULL," \t\r\n",&save),NULL,10);
         for(i=0;i<na;i++) {
             t=strtok_r(NULL," \t\r\n",&save);
-            if(t[0]=='r')
+            if(t[0]=='r') {
                 ap[i]=ptr(&reg[t[1]-'0']);
-            else
+            } else {
                 av[i]=(uint32_t)strtoul(t,NULL,16);
+            }
         }
 #define I(k) ((int32_t)av[k])
-        if(!strcmp(name,"SetRotMatrix"))
+        if(!strcmp(name,"SetRotMatrix")) {
             sh2o_psyq_SetRotMatrix(&g,ap[0]);
-        else if(!strcmp(name,"SetLightMatrix"))
+        } else if(!strcmp(name,"SetLightMatrix")) {
             sh2o_psyq_SetLightMatrix(&g,ap[0]);
-        else if(!strcmp(name,"SetColorMatrix"))
+        } else if(!strcmp(name,"SetColorMatrix")) {
             sh2o_psyq_SetColorMatrix(&g,ap[0]);
-        else if(!strcmp(name,"SetTransMatrix"))
+        } else if(!strcmp(name,"SetTransMatrix")) {
             sh2o_psyq_SetTransMatrix(&g,ap[0]);
-        else if(!strcmp(name,"SetBackColor"))
+        } else if(!strcmp(name,"SetBackColor")) {
             sh2o_psyq_SetBackColor(&g,I(0),I(1),I(2));
-        else if(!strcmp(name,"SetFarColor"))
+        } else if(!strcmp(name,"SetFarColor")) {
             sh2o_psyq_SetFarColor(&g,I(0),I(1),I(2));
-        else if(!strcmp(name,"SetGeomOffset"))
+        } else if(!strcmp(name,"SetGeomOffset")) {
             sh2o_psyq_SetGeomOffset(&g,I(0),I(1));
-        else if(!strcmp(name,"SetGeomScreen"))
+        } else if(!strcmp(name,"SetGeomScreen")) {
             sh2o_psyq_SetGeomScreen(&g,I(0));
-        else if(!strcmp(name,"InitGeom"))
+        } else if(!strcmp(name,"InitGeom")) {
             sh2o_psyq_InitGeom(&g);
-        else if(!strcmp(name,"SetFogNearFar"))
+        } else if(!strcmp(name,"SetFogNearFar")) {
             sh2o_psyq_SetFogNearFar(&g,I(0),I(1),I(2));
-        else if(!strcmp(name,"TransMatrix"))
+        } else if(!strcmp(name,"TransMatrix")) {
             ret=sh2o_psyq_TransMatrix(&g,ap[0],ap[1]),rkind=1;
-        else if(!strcmp(name,"TransposeMatrix"))
+        } else if(!strcmp(name,"TransposeMatrix")) {
             ret=sh2o_psyq_TransposeMatrix(&g,ap[0],ap[1]),rkind=1;
-        else if(!strcmp(name,"CompMatrix"))
+        } else if(!strcmp(name,"CompMatrix")) {
             ret=sh2o_psyq_CompMatrix(&g,ap[0],ap[1],ap[2]),rkind=1;
-        else if(!strcmp(name,"ApplyMatrix"))
+        } else if(!strcmp(name,"ApplyMatrix")) {
             ret=sh2o_psyq_ApplyMatrix(&g,ap[0],ap[1],ap[2]),rkind=1;
-        else if(!strcmp(name,"ApplyMatrixLV"))
+        } else if(!strcmp(name,"ApplyMatrixLV")) {
             ret=sh2o_psyq_ApplyMatrixLV(&g,ap[0],ap[1],ap[2]),rkind=1;
-        else if(!strcmp(name,"RotTrans"))
+        } else if(!strcmp(name,"RotTrans")) {
             sh2o_psyq_RotTrans(&g,ap[0],ap[1],ap[2]);
-        else if(!strcmp(name,"PushMatrix"))
+        } else if(!strcmp(name,"PushMatrix")) {
             rv=(uint32_t)sh2o_psyq_PushMatrix(&g,ap[0]),rkind=2;
-        else if(!strcmp(name,"PopMatrix"))
+        } else if(!strcmp(name,"PopMatrix")) {
             rv=(uint32_t)sh2o_psyq_PopMatrix(&g,ap[0]),rkind=2;
-        else if(!strcmp(name,"ratan2"))
+        } else if(!strcmp(name,"ratan2")) {
             rv=(uint32_t)sh2o_psyq_ratan2(&g,I(0),I(1)),rkind=2;
-        else {
+        } else {
             fprintf(stderr,"unknown routine %s\n",name);
             return 2;
         }
-        if(brk_calls==1)
+        if(brk_calls==1) {
             printf("brk%lx",(unsigned long)brk_code);
-        else if(brk_calls)
+        } else if(brk_calls) {
             printf("brk?");
-        else if(rkind==0)
+        } else if(rkind==0) {
             printf("-");
-        else if(rkind==2)
+        } else if(rkind==2) {
             printf("%lx",(unsigned long)rv);
-        else {
+        } else {
             for(i=0;i<n&&ptr(&reg[i])!=ret;i++)
                 ;
-            if(i<n)
+            if(i<n) {
                 printf("r%u",i);
-            else
+            } else {
                 printf("r?");
+            }
         }
         for(i=0;i<n;i++) {
             pack(&reg[i],rw);
@@ -225,6 +227,50 @@ static uint32_t seeded_breaks(void) {
     (void)sh2o_psyq_test_digest_part(0,SH2O_PSYQ_CASES,s);
     sh2o_psyq_break=0;
     return brk_calls;
+}
+
+static int matrix_stack_check(void) {
+    static const struct { int32_t top; int push,pop; } rejects[]={
+        {641,-1,-2},{639,-2,-2},{-1,-2,-1},{1,-2,-2}
+    };
+    sh2o_gte_t g={0},want;
+    sh2o_psyq_mstack_t s={0},saved;
+    for(unsigned i=0;i<8;i++)
+        g.r[32+i]=0x12348000u+i;
+    want=g;
+    for(unsigned i=0;i<sizeof rejects/sizeof rejects[0];i++) {
+        s.top=rejects[i].top;
+        saved=s;
+        if(sh2o_psyq_PushMatrix(&g,&s)!=rejects[i].push || memcmp(g.r,want.r,sizeof g.r) ||
+            s.top!=saved.top || memcmp(s.w,saved.w,sizeof s.w) ||
+            sh2o_psyq_PopMatrix(&g,&s)!=rejects[i].pop || memcmp(g.r,want.r,sizeof g.r) ||
+            s.top!=saved.top || memcmp(s.w,saved.w,sizeof s.w)) {
+            fprintf(stderr,"psyq stack: guard/state mismatch at top %ld\n",(long)saved.top);
+            return 1;
+        }
+    }
+    s.top=608;
+    if(sh2o_psyq_PushMatrix(&g,&s) || s.top!=640 || s.w[156]!=0xffff8004u ||
+        s.w[155]!=want.r[35] || s.w[157]!=want.r[37] || s.w[151]!=0) {
+        fprintf(stderr,"psyq stack: signed push mismatch\n");
+        return 1;
+    }
+    want.r[36]=0xffff8004u;
+    memset(&g.r[32],0,8*sizeof g.r[0]);
+    if(sh2o_psyq_PopMatrix(&g,&s) || s.top!=608 || memcmp(g.r,want.r,sizeof g.r)) {
+        fprintf(stderr,"psyq stack: round-trip register mismatch\n");
+        return 1;
+    }
+    s.top=640;
+    s.w[156]=want.r[36]=0xfedc8001u;
+    saved=s;
+    if(sh2o_psyq_PopMatrix(&g,&s) || s.top!=608 || memcmp(s.w,saved.w,sizeof s.w) ||
+        memcmp(g.r,want.r,sizeof g.r)) {
+        fprintf(stderr,"psyq stack: raw pop register mismatch: word 36 expected %08lx got %08lx\n",
+            (unsigned long)want.r[36],(unsigned long)g.r[36]);
+        return 1;
+    }
+    return 0;
 }
 
 int main(int argc,char **argv) {
@@ -250,5 +296,5 @@ int main(int argc,char **argv) {
     }
     printf("psyq: suite returned 0x%X, digest 0x%08lX (expected 0x%08lX)\n",(unsigned)rc,(unsigned long)digest,
         (unsigned long)SH2O_DIGEST_PSYQ);
-    return rc==0&&digest==SH2O_DIGEST_PSYQ?0:EXIT_FAILURE;
+    return rc==0&&digest==SH2O_DIGEST_PSYQ&&!matrix_stack_check()?0:EXIT_FAILURE;
 }

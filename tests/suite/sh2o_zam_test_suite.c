@@ -255,12 +255,13 @@ void sh2o_zam_test_seed(sh2o_zam_tally *t) {
 int sh2o_zam_test_digest_part(uint32_t first,uint32_t n,sh2o_zam_tally *t) {
     uint32_t i;
     for(i = first; i < first + n; i++) {
-        if(i < SH2O_VEC_COUNT)
+        if(i < SH2O_VEC_COUNT) {
             sh2o_zam_vector(t,i);
-        else if(i < SH2O_VEC_COUNT + SH2O_ZAM_SEEDED)
+        } else if(i < SH2O_VEC_COUNT + SH2O_ZAM_SEEDED) {
             sh2o_zam_seeded(t,i - SH2O_VEC_COUNT);
-        else
+        } else {
             sh2o_zam_gate(t,(unsigned)(i - SH2O_VEC_COUNT - SH2O_ZAM_SEEDED));
+        }
     }
     return t->rc;
 }

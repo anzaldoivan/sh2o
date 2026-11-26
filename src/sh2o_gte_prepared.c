@@ -10,8 +10,7 @@
  * The load makes the rows (R SHL 4) and the MACH, MACL words of t SHL 16 with 32-bit operations and constant
  * shifts only (no libgcc helper). The entry decodes the selector, reads the shadow, runs the kernel
  * (sh2oi_gte_prepared_mac3_l on the SH-2, sh2oi_gte_prepared_mac3_c elsewhere) and the sf=1 tail on int32 MACs.
- * Outside its gate it calls sh2o_gte_mvmva, the only call of this file (tests/sh2/prepared_static.txt). The file
- * has no static function: tests/test_prepared.c includes it again with each planted bug. */
+ * Outside its gate it calls sh2o_gte_mvmva, the only out-of-line call (tests/sh2/prepared_static.txt). */
 #include <stdint.h>
 
 #include "sh2o/gte_prepared.h"
@@ -24,59 +23,80 @@
 #define SH2OI_PREPARED_MUTANT 0
 #endif
 
-/* Contract tag gte-mvmva-prepared-1. Contract in sh2o/gte_prepared.h. */
-void sh2o_gte_prepared_load(sh2o_gte_prepared_t *p,const sh2o_gte_t *g,unsigned parts)
-{
-    unsigned k,i,bit = 1u; /* bit: the part of k (constant shifts only: the SH-2 has no variable shift) */
-    SH2OI_COUNT_NAME(SH2O_COUNT_GTE_PREPARED_LOAD);
-    /* rows: matrix k from its five words at 32 + 8k, element j the low (j even) or high half of word j / 2 */
-    for(k = 0; k < 3; k++,bit <<= 1)
-    {
-        const uint32_t *w = &g->r[32 + 8 * k];
-        int32_t *c = p->c[k];
-        if(!(parts & bit))
-            continue;
-        for(i = 0; i < 9; i++)
-        {
-            uint32_t h = (i & 1u) ? w[i >> 1] >> 16 : w[i >> 1];
+/* Derive private helper names from the loader entry for the source-inclusion tests. */
+#define SH2OI_LOAD_HELPER_NAME(entry,suffix) entry ## suffix
+#define SH2OI_LOAD_HELPER(entry,suffix) SH2OI_LOAD_HELPER_NAME(entry,suffix)
+#define sh2oi_load_rows SH2OI_LOAD_HELPER(sh2o_gte_prepared_load,_rows)
+#define sh2oi_load_words SH2OI_LOAD_HELPER(sh2o_gte_prepared_load,_words)
 #if SH2OI_PREPARED_MUTANT == 2
-            c[i] = (int32_t)((((h & 0xFFFFu) ^ 0x8000u) - 0x8000u) << 3);
+#define SH2OI_LOAD_CSHIFT 3
 #else
-            c[i] = (int32_t)((((h & 0xFFFFu) ^ 0x8000u) - 0x8000u) << 4);
+#define SH2OI_LOAD_CSHIFT 4
 #endif
-        }
-    }
-    /* preload words and gate: translation k at 37 + 8k (k 0, 1), none (k 2) */
-    for(k = 0; k < 3; k++,bit <<= 1)
-    {
-        uint32_t *pre = p->pre[k];
-        uint8_t ok = 1;
-        if(!(parts & bit))
-            continue;
-        for(i = 0; i < 3; i++)
-        {
-            uint32_t u = k < 2 ? g->r[37 + 8 * k + i] : 0u;
 #if SH2OI_PREPARED_MUTANT == 1
-            pre[2 * i] = (u >> 20) | ((0u - (u >> 31)) << 12);
-            pre[2 * i + 1] = u << 12;
+#define SH2OI_LOAD_TSHIFT 12
 #else
-            pre[2 * i] = (u >> 16) | ((0u - (u >> 31)) << 16); /* MACH: t SAR 16 */
-            pre[2 * i + 1] = u << 16;                          /* MACL */
+#define SH2OI_LOAD_TSHIFT 16
 #endif
+/* Shift the signed interval |t| < 7FF40000h into an unsigned range test. */
 #if SH2OI_PREPARED_MUTANT == 3
-            if(!(u + 0x7FF3FFFFu <= 0xFFE7FFFFu))
+#define SH2OI_LOAD_OUT(u) ((u) + 0x7FF3FFFFu > 0xFFE7FFFFu)
 #else
-            if(!(u + 0x7FF3FFFFu < 0xFFE7FFFFu)) /* |t| < 7FF40000h */
+#define SH2OI_LOAD_OUT(u) ((u) + 0x7FF3FFFFu >= 0xFFE7FFFFu)
 #endif
-                ok = 0;
-        }
-        p->ok[k] = ok;
-    }
+#define SH2OI_LOAD_ROW(w) ((int32_t)((uint32_t)(int32_t)(int16_t)(uint16_t)(w) << SH2OI_LOAD_CSHIFT))
+/* Fill the high bits of the MACH word from the sign bit of the input word. */
+#define SH2OI_LOAD_MACH(w) (((w) >> (32 - SH2OI_LOAD_TSHIFT)) | ((0u - ((w) >> 31)) << SH2OI_LOAD_TSHIFT))
+SH2OI_FORCE_INLINE void sh2oi_load_rows(int32_t *c,const uint32_t *w) {
+    uint32_t u;
+    u = w[0]; c[0] = SH2OI_LOAD_ROW(u); c[1] = SH2OI_LOAD_ROW(u >> 16);
+    u = w[1]; c[2] = SH2OI_LOAD_ROW(u); c[3] = SH2OI_LOAD_ROW(u >> 16);
+    u = w[2]; c[4] = SH2OI_LOAD_ROW(u); c[5] = SH2OI_LOAD_ROW(u >> 16);
+    u = w[3]; c[6] = SH2OI_LOAD_ROW(u); c[7] = SH2OI_LOAD_ROW(u >> 16);
+    c[8] = SH2OI_LOAD_ROW(w[4]);
+}
+SH2OI_FORCE_INLINE uint8_t sh2oi_load_words(uint32_t *p,const uint32_t *w) {
+    uint32_t a = w[0],b = w[1],c = w[2];
+    p[0] = SH2OI_LOAD_MACH(a);
+    p[1] = a << SH2OI_LOAD_TSHIFT;
+    p[2] = SH2OI_LOAD_MACH(b);
+    p[3] = b << SH2OI_LOAD_TSHIFT;
+    p[4] = SH2OI_LOAD_MACH(c);
+    p[5] = c << SH2OI_LOAD_TSHIFT;
+    return (uint8_t)!(SH2OI_LOAD_OUT(a) | SH2OI_LOAD_OUT(b) | SH2OI_LOAD_OUT(c));
 }
 
 /* Contract tag gte-mvmva-prepared-1. Contract in sh2o/gte_prepared.h. */
-int sh2o_gte_mvmva_prepared(sh2o_gte_t *g,const sh2o_gte_prepared_t *p,uint32_t cmd)
-{
+void sh2o_gte_prepared_load(sh2o_gte_prepared_t *p,const sh2o_gte_t *g,unsigned parts) {
+    SH2OI_COUNT_NAME(SH2O_COUNT_GTE_PREPARED_LOAD);
+    if(parts & SH2O_GTE_PREPARED_RT)
+        sh2oi_load_rows(p->c[0],g->r+32);
+    if(parts & SH2O_GTE_PREPARED_LIGHT)
+        sh2oi_load_rows(p->c[1],g->r+40);
+    if(parts & SH2O_GTE_PREPARED_COLOR)
+        sh2oi_load_rows(p->c[2],g->r+48);
+    if(parts & SH2O_GTE_PREPARED_TR)
+        p->ok[0] = sh2oi_load_words(p->pre[0],g->r+37);
+    if(parts & SH2O_GTE_PREPARED_BK)
+        p->ok[1] = sh2oi_load_words(p->pre[1],g->r+45);
+    if(parts & SH2O_GTE_PREPARED_NONE) {
+        for(unsigned j = 0;j < 6;j++)
+            p->pre[2][j] = 0;
+        p->ok[2] = 1;
+    }
+}
+#undef SH2OI_LOAD_MACH
+#undef SH2OI_LOAD_ROW
+#undef SH2OI_LOAD_OUT
+#undef SH2OI_LOAD_TSHIFT
+#undef SH2OI_LOAD_CSHIFT
+#undef sh2oi_load_words
+#undef sh2oi_load_rows
+#undef SH2OI_LOAD_HELPER
+#undef SH2OI_LOAD_HELPER_NAME
+
+/* Contract tag gte-mvmva-prepared-1. Contract in sh2o/gte_prepared.h. */
+int sh2o_gte_mvmva_prepared(sh2o_gte_t *g,const sh2o_gte_prepared_t *p,uint32_t cmd) {
     unsigned mx = cmd >> 17 & 3u,vx = cmd >> 15 & 3u,cv = cmd >> 13 & 3u,ts = cv == 3u ? 2u : cv;
     uint32_t *r = g->r;
     uint32_t f = 0,b = 1u << 24; /* FLAG and its bit 24-i */
@@ -89,22 +109,18 @@ int sh2o_gte_mvmva_prepared(sh2o_gte_t *g,const sh2o_gte_prepared_t *p,uint32_t 
 #if SH2OI_NATIVE
         || sh2oi_k_sr_s()
 #endif
-    )
-    {
+    ) {
         SH2OI_COUNT_IN();
         sh2o_gte_mvmva(g,cmd);
         SH2OI_COUNT_OUT();
         return 0;
     }
     SH2OI_COUNT_STORE(SH2O_COUNT_OP + 0x12u,1u);
-    if(vx == 3u)
-    {
+    if(vx == 3u) {
         v[0] = (int16_t)r[9];
         v[1] = (int16_t)r[10];
         v[2] = (int16_t)r[11];
-    }
-    else
-    {
+    } else {
         v[0] = (int16_t)r[2 * vx];
         v[1] = (int16_t)(r[2 * vx] >> 16);
         v[2] = (int16_t)r[2 * vx + 1];
@@ -115,17 +131,13 @@ int sh2o_gte_mvmva_prepared(sh2o_gte_t *g,const sh2o_gte_prepared_t *p,uint32_t 
     sh2oi_gte_prepared_mac3_c(p->c[mx],p->pre[ts],v,mac);
 #endif
     /* the sf=1 tail: MAC1-3, IR1-3 saturated (lm), FLAG 24-22; FLAG reset at the command start */
-    for(i = 0; i < 3; i++)
-    {
+    for(i = 0; i < 3; i++) {
         int32_t m = mac[i];
         r[25 + i] = (uint32_t)m;
-        if(m < lo)
-        {
+        if(m < lo) {
             f |= b;
             m = lo;
-        }
-        else if(m > 0x7FFF)
-        {
+        } else if(m > 0x7FFF) {
             f |= b;
             m = 0x7FFF;
         }

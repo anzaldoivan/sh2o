@@ -1,27 +1,35 @@
+# The job rules are in CONTRIBUTING.md, section "CI jobs"; scripts/check_ci.py checks them.
 # Checks that need no compiler: the written style, the generated oracle
 # headers, the SH2ZAM and psyz pins, and the public tree check.
 name: sh2o checks
 on:
   push:
+    branches: [dev, main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   style:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - run: make style
   oracles:
     name: oracle headers match their generators
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - run: make oracles-check
   sh2zam-pin:
     name: SH2ZAM and psyz submodules are at the pinned commits
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +40,7 @@ jobs:
   public-check:
     name: public tree check
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - run: make public-check

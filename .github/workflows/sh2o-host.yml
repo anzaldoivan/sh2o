@@ -1,46 +1,64 @@
+# The job rules are in CONTRIBUTING.md, section "CI jobs"; scripts/check_ci.py checks them.
 # Host build and tests of sh2o: GCC and Clang, strict warnings, sanitizers,
-# the portable path and the installed package. Each step is a make target, so
-# the same job runs on a local machine.
+# the portable path, the installed package and the SH2ZAM delegate. Each row
+# is one make goal, so the same job runs on a local machine (make ci). The gcc
+# test row runs make proofs, which also runs the long proofs.
 name: sh2o host
 on:
   push:
+    branches: [dev, main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   host:
     name: ${{ matrix.target }} (${{ matrix.cc }})
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        cc: [gcc, clang]
-        target: [test, strict, sanitize, portable, install-check]
-    env:
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-      ASAN_OPTIONS: detect_leaks=1
-      SH2O_REQUIRE_PSYZ: 1
-    steps:
-      - uses: actions/checkout@v4
-      - name: Fetch the psyz pin (test-only, no nested submodules)
-        run: git submodule update --init --checkout --depth 1 external/psyz
-      - name: make ${{ matrix.target }} CC=${{ matrix.cc }}
-        run: make ${{ matrix.target }} CC=${{ matrix.cc }}
-      - name: Keep the test log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: host-${{ matrix.target }}-${{ matrix.cc }}
-          path: build/**/Testing/Temporary/LastTest.log
-          if-no-files-found: ignore
-  host-zam:
-    name: test SH2O_ZAM=ON (${{ matrix.cc }})
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        cc: [gcc, clang]
+        include:
+          - target: test
+            cc: gcc
+            goal: proofs
+          - target: test
+            cc: clang
+            goal: test
+          - target: strict
+            cc: gcc
+            goal: strict
+          - target: strict
+            cc: clang
+            goal: strict
+          - target: sanitize
+            cc: gcc
+            goal: sanitize
+          - target: sanitize
+            cc: clang
+            goal: sanitize
+          - target: portable
+            cc: gcc
+            goal: portable
+          - target: portable
+            cc: clang
+            goal: portable
+          - target: install-check
+            cc: gcc
+            goal: install-check
+          - target: install-check
+            cc: clang
+            goal: install-check
+          - target: test SH2O_ZAM=ON
+            cc: gcc
+            goal: test SH2O_ZAM=ON
+          - target: test SH2O_ZAM=ON
+            cc: clang
+            goal: test SH2O_ZAM=ON
     env:
       SH2O_REQUIRE_PSYZ: 1
     steps:
@@ -49,12 +67,12 @@ jobs:
           submodules: true
       - name: Fetch the psyz pin (test-only, no nested submodules)
         run: git submodule update --init --checkout --depth 1 external/psyz
-      - name: make test SH2O_ZAM=ON CC=${{ matrix.cc }}
-        run: make test SH2O_ZAM=ON CC=${{ matrix.cc }}
+      - name: make ${{ matrix.goal }} CC=${{ matrix.cc }}
+        run: make ${{ matrix.goal }} CC=${{ matrix.cc }}
       - name: Keep the test log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: host-zam-${{ matrix.cc }}
+          name: host-${{ matrix.cc }}-${{ matrix.goal }}
           path: build/**/Testing/Temporary/LastTest.log
           if-no-files-found: ignore

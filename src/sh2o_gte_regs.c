@@ -10,21 +10,18 @@
 #include "sh2o_count_internal.h"
 
 /* IRGB/ORGB channel: IR SAR 7 saturated 0..1Fh */
-static uint32_t sh2oi_orgb5(uint32_t ir)
-{
+static uint32_t sh2oi_orgb5(uint32_t ir) {
     int32_t x = sh2oi_asr(sh2oi_s16(ir),7);
     return (uint32_t)(x < 0 ? 0 : x > 0x1F ? 0x1F : x);
 }
 
 /* IRGB/ORGB read: IR1-3 SAR 7 saturated 0..1Fh, packed 5:5:5 */
-static uint32_t sh2oi_orgb(const sh2o_gte_t *g)
-{
+static uint32_t sh2oi_orgb(const sh2o_gte_t *g) {
     return sh2oi_orgb5(g->r[9]) | sh2oi_orgb5(g->r[10]) << 5 | sh2oi_orgb5(g->r[11]) << 10;
 }
 
 /* read kinds by register: a table, not a switch (gcc lowers a sparse switch to bit tests, a variable shift) */
-enum
-{
+enum {
     SH2OI_FULL,
     SH2OI_SEXT,
     SH2OI_ZEXT,
@@ -33,7 +30,7 @@ enum
     SH2OI_LZCR,
     SH2OI_FLAG
 };
-static const uint8_t sh2oi_kind[64] = {
+static const uint8_t sh2oi_kind[64] SH2OI_RODATA(sh2oi_kind) = {
     [1] = SH2OI_SEXT,[3] = SH2OI_SEXT,[5] = SH2OI_SEXT,                     /* VZ0-2 */
     [8] = SH2OI_SEXT,[9] = SH2OI_SEXT,[10] = SH2OI_SEXT,[11] = SH2OI_SEXT, /* IR0-3 */
     [36] = SH2OI_SEXT,[44] = SH2OI_SEXT,[52] = SH2OI_SEXT,                    /* RT33, L33, LB3 */
@@ -43,8 +40,7 @@ static const uint8_t sh2oi_kind[64] = {
 };
 
 /* Contract tag gte-regs-1. Contract in sh2o/gte.h. */
-uint32_t sh2o_gte_read(const sh2o_gte_t *g,unsigned reg)
-{
+uint32_t sh2o_gte_read(const sh2o_gte_t *g,unsigned reg) {
     uint32_t w;
     unsigned k;
     if(reg > 63)
@@ -61,8 +57,7 @@ uint32_t sh2o_gte_read(const sh2o_gte_t *g,unsigned reg)
         return g->r[14];
     if(k == SH2OI_ORGB) /* IRGB, ORGB */
         return sh2oi_orgb(g);
-    if(k == SH2OI_LZCR)
-    { /* LZCR of LZCS */
+    if(k == SH2OI_LZCR) { /* LZCR of LZCS */
         uint32_t v = g->r[30];
         return sh2o_k_clz32(v & 0x80000000u ? ~v : v);
     }
@@ -71,11 +66,9 @@ uint32_t sh2o_gte_read(const sh2o_gte_t *g,unsigned reg)
 }
 
 /* Contract tag gte-regs-1. Contract in sh2o/gte.h. */
-void sh2o_gte_write(sh2o_gte_t *g,unsigned reg,uint32_t v)
-{
+void sh2o_gte_write(sh2o_gte_t *g,unsigned reg,uint32_t v) {
     SH2OI_COUNT_WRITE(reg);
-    switch(reg)
-    {
+    switch(reg) {
         case 15: /* SXYP: push the SXY FIFO */
             g->r[12] = g->r[13];
             g->r[13] = g->r[14];

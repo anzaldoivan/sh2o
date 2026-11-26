@@ -21,7 +21,7 @@ Line 1 is a short title that ends with a full stop. Line 4 credits SH2ZAM and SH
 ## Comments
 
 - Use `/* */` only. Do not use `//`.
-- Doc comments are only in public headers (`include/`). Use `/** \brief <text> */` before an item and `/**< <text> */` after a struct member. Do not use other Doxygen tags.
+- Each public item in `include/sh2o/` has a contract comment on the line before it. A public item is a function, a macro, a typedef, a struct, an enum or an `extern` object. The comment is a plain `/* */` comment. It can be before the `#if` that selects the definition. Do not use `/**`. Do not use Doxygen tags.
 - Write a contract as sentences: the range, the rounding, the saturation, the FLAG bits, the aliasing, the failure result and the hardware assumptions.
 - A comment in a source file tells why, not what. Give a manual reference with its name, revision and section.
 - Do not write TODO, FIXME or XXX.
@@ -35,7 +35,7 @@ Line 1 is a short title that ends with a full stop. Line 4 credits SH2ZAM and SH
 - Do not define a macro that no code reads.
 - A hook is a public macro that a consumer can define before it includes the header, for example `SH2O_K_ENTER()` and `SH2O_K_LEAVE()`. The default of a hook is empty. The header gives its contract. The proofs apply to the empty default.
 - A function that has the contract of a PSY-Q library function keeps the PSY-Q spelling after the prefix: `sh2o_psyq_SetRotMatrix`.
-- Header guard: `SH2O_<NAME>_H`, where `<NAME>` is the file name in capitals without `sh2o_`. `sh2o.h` uses `SH2O_H`.
+- Header guard: `SH2O_<NAME>_H`, where `<NAME>` is the file name in capitals without `sh2o_`. `sh2o.h` uses `SH2O_H`. The guard ends with a bare `#endif`.
 - Files: `src/sh2o_<module>.c`, `src/sh2o_<module>_internal.h`, `include/sh2o/<family>.h`, `include/sh2o/<family>_experimental.h` for a family that no default path uses, `tests/test_<family>.c`, `tests/<family>_oracle.h`.
 - `include/sh2o/cdefs.h` is not a family. It holds the selection of the SH-2 path and the attribute macros that the public headers share.
 - A family of `static inline` functions has its bodies in two sub-headers: `include/sh2o/inline/sw/<family>_sw.inl.h` for the C references and `include/sh2o/inline/sh2/<family>_sh2.inl.h` for the SH-2 kernels. Only the family header includes them. The guard of `<name>.inl.h` is `SH2O_<NAME>_INL_H`.
@@ -45,17 +45,18 @@ Line 1 is a short title that ends with a full stop. Line 4 credits SH2ZAM and SH
 
 - Indent with 4 spaces. Do not use tabs. Do not put spaces at the end of a line.
 - Write `if(`, `for(`, `while(` and `switch(`, with no space before the parenthesis.
-- Put the `{` on the line of the function or the statement.
+- Put the `{` on the line of the function or the statement. Put `else` on the line of the `}` before it: `} else {`.
 - Do not put a space after a comma: `sh2o_mul_q12(sh2o_q12_t a,sh2o_q12_t b)`. Inline assembly operand lists are an exception.
 - Put the `*` next to the name: `const uint8_t *bytes`, not `uint8_t* bytes`.
-- Short expressions have no spaces around operators: `(int64_t)a*b`.
+- You can put spaces around binary operators. Use them when they make an expression easier to read.
 - A public header includes `<stdbool.h>`, `<stddef.h>` and `<stdint.h>` first, then its sh2o headers, then the `extern "C"` block.
+- A header in `include/sh2o/` or `tests/suite/` that declares a function that is not `static`, or an `extern` object, has the `extern "C"` block after its includes. The block closes before the bare `#endif` of the guard.
 
 ## Inline assembly
 
 - Write `__asm__ volatile(`.
 - Put one instruction in each string, one string on each line: `"dmuls.l %[a],%[b]\n\t"`.
-- Use named operands. Give exact constraints: `"+&r"` for a pointer that the code increments, `"=&r"` for a scratch register, `"m"` for memory that the code reads.
+- Use named operands (`%[m]`), never positional ones (`%0`); `scripts/style_check.py` reports a positional operand. Give exact constraints: `"+&r"` for a pointer that the code increments, `"=&r"` for a scratch register, `"m"` for memory that the code reads.
 - When the code uses MACH or MACL, put `"mach","macl"` in the clobbers.
 - `MAC.L` and `MAC.W` use the SR.S bit. Before them, read SR (`stc sr`) and check S, or set it (`clrs`, `sets`), as the contract tells.
 - Gate the assembly on `SH2OI_NATIVE` and keep a portable C path that gives the same bytes.
@@ -67,6 +68,7 @@ Library code is the code in `include/` and `src/`.
 - Do not call the C library. Include only `<stdbool.h>`, `<stddef.h>` and `<stdint.h>`.
 - Do not use floating point.
 - Do not allocate memory.
+- Put `SH2OI_RODATA(<name>)` after the declarator of a `static const` table of 16 or more entries: `static const int16_t sh2oi_ratan_tbl[1025] SH2OI_RODATA(sh2oi_ratan_tbl) = {`. Give a table in a function a name that starts with `sh2oi_`. The macro puts the table in its own section, so `--gc-sections` can remove it and a linker script can place it (as SH2ZAM does in `sh2zam_sections.h`). `scripts/style_check.py` reports a table that does not have the macro.
 
 `make cross` also makes sure that the SH-2 objects need no `memcpy`, `memset` or `memmove`. The compiler can add such calls for a struct copy, so copy such structs one field at a time.
 

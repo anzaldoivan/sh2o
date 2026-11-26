@@ -20,8 +20,7 @@
 #define SH2OI_HI(w) ((int16_t)(uint16_t)((w) >> 16))
 
 /* MIPS sra: arithmetic right shift by s (1..31), defined for negative v */
-static int32_t sh2oi_sra(int32_t v,unsigned s)
-{
+static int32_t sh2oi_sra(int32_t v,unsigned s) {
     return v < 0 ? (int32_t)~(~(uint32_t)v >> s) : (int32_t)((uint32_t)v >> s);
 }
 
@@ -29,11 +28,9 @@ void (*sh2o_psyq_break)(uint32_t code);
 
 /* MIPS div, mflo, with the checks the object's compiler put around every div: d == 0 -> `break 7` (BRK 1C00h),
  * d == -1 and n == INT32_MIN -> `break 6` (BRK 1800h). 1 and *q = n / d; or 0 after calling the hook (q untouched) */
-static int sh2oi_div(int32_t n,int32_t d,int32_t *q)
-{
+static int sh2oi_div(int32_t n,int32_t d,int32_t *q) {
     uint32_t code = d == 0 ? 0x1C00u : d == -1 && n == INT32_MIN ? 0x1800u : 0u;
-    if(code)
-    {
+    if(code) {
         if(sh2o_psyq_break)
             sh2o_psyq_break(code);
         return 0;
@@ -43,8 +40,7 @@ static int sh2oi_div(int32_t n,int32_t d,int32_t *q)
 }
 
 /* the five words of a matrix's m (and pad) as the object's lw 0..0x10 read them */
-static void sh2oi_mwords(const sh2o_psyq_matrix_t *m,uint32_t w[5])
-{
+static void sh2oi_mwords(const sh2o_psyq_matrix_t *m,uint32_t w[5]) {
     w[0] = SH2OI_W(m->m[0][0],m->m[0][1]);
     w[1] = SH2OI_W(m->m[0][2],m->m[1][0]);
     w[2] = SH2OI_W(m->m[1][1],m->m[1][2]);
@@ -53,8 +49,7 @@ static void sh2oi_mwords(const sh2o_psyq_matrix_t *m,uint32_t w[5])
 }
 
 /* CTC2 base..base+4 <- the five m words (SetLightMatrix, SetColorMatrix, CompMatrix, ApplyMatrixLV) */
-static void sh2oi_set3(sh2o_gte_t *g,unsigned base,const sh2o_psyq_matrix_t *m)
-{
+static void sh2oi_set3(sh2o_gte_t *g,unsigned base,const sh2o_psyq_matrix_t *m) {
     uint32_t w[5];
     unsigned k;
     sh2oi_mwords(m,w);
@@ -63,8 +58,7 @@ static void sh2oi_set3(sh2o_gte_t *g,unsigned base,const sh2o_psyq_matrix_t *m)
 }
 
 /* RT (CTC2 32..36, plain stores) <- the five m words, straight into the image (no accessor per word) */
-static void sh2oi_rt(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
-{
+static void sh2oi_rt(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m) {
     uint32_t *r = &g->r[32];
     SH2OI_COUNT_STORE(SH2O_COUNT_WRITE_RT,5);
     r[0] = SH2OI_W(m->m[0][0],m->m[0][1]);
@@ -75,29 +69,25 @@ static void sh2oi_rt(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
 }
 
 /* Contract tag psyq-setrotmatrix-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetRotMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
-{
+void sh2o_psyq_SetRotMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETROTMATRIX);
     sh2oi_rt(g,m);
 }
 
 /* Contract tag psyq-setlightmatrix-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetLightMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
-{
+void sh2o_psyq_SetLightMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETLIGHTMATRIX);
     sh2oi_set3(g,40,m);
 }
 
 /* Contract tag psyq-setcolormatrix-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetColorMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
-{
+void sh2o_psyq_SetColorMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETCOLORMATRIX);
     sh2oi_set3(g,48,m);
 }
 
 /* Contract tag psyq-settransmatrix-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetTransMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
-{
+void sh2o_psyq_SetTransMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETTRANSMATRIX);
     sh2o_gte_write(g,37,(uint32_t)m->t[0]);
     sh2o_gte_write(g,38,(uint32_t)m->t[1]);
@@ -105,8 +95,7 @@ void sh2o_psyq_SetTransMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m)
 }
 
 /* Contract tag psyq-setbackcolor-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetBackColor(sh2o_gte_t *g,int32_t rbk,int32_t gbk,int32_t bbk)
-{
+void sh2o_psyq_SetBackColor(sh2o_gte_t *g,int32_t rbk,int32_t gbk,int32_t bbk) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETBACKCOLOR);
     sh2o_gte_write(g,45,(uint32_t)rbk << 4);
     sh2o_gte_write(g,46,(uint32_t)gbk << 4);
@@ -114,8 +103,7 @@ void sh2o_psyq_SetBackColor(sh2o_gte_t *g,int32_t rbk,int32_t gbk,int32_t bbk)
 }
 
 /* Contract tag psyq-setfarcolor-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetFarColor(sh2o_gte_t *g,int32_t rfc,int32_t gfc,int32_t bfc)
-{
+void sh2o_psyq_SetFarColor(sh2o_gte_t *g,int32_t rfc,int32_t gfc,int32_t bfc) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETFARCOLOR);
     sh2o_gte_write(g,53,(uint32_t)rfc << 4);
     sh2o_gte_write(g,54,(uint32_t)gfc << 4);
@@ -123,23 +111,20 @@ void sh2o_psyq_SetFarColor(sh2o_gte_t *g,int32_t rfc,int32_t gfc,int32_t bfc)
 }
 
 /* Contract tag psyq-setgeomoffset-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetGeomOffset(sh2o_gte_t *g,int32_t ofx,int32_t ofy)
-{
+void sh2o_psyq_SetGeomOffset(sh2o_gte_t *g,int32_t ofx,int32_t ofy) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETGEOMOFFSET);
     sh2o_gte_write(g,56,(uint32_t)ofx << 16);
     sh2o_gte_write(g,57,(uint32_t)ofy << 16);
 }
 
 /* Contract tag psyq-setgeomscreen-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetGeomScreen(sh2o_gte_t *g,int32_t h)
-{
+void sh2o_psyq_SetGeomScreen(sh2o_gte_t *g,int32_t h) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETGEOMSCREEN);
     sh2o_gte_write(g,58,(uint32_t)h);
 }
 
 /* Contract tag psyq-initgeom-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_InitGeom(sh2o_gte_t *g)
-{
+void sh2o_psyq_InitGeom(sh2o_gte_t *g) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_INITGEOM);
     sh2o_gte_write(g,61,0x155u);
     sh2o_gte_write(g,62,0x100u);
@@ -151,8 +136,7 @@ void sh2o_psyq_InitGeom(sh2o_gte_t *g)
 }
 
 /* Contract tag psyq-setfognearfar-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_SetFogNearFar(sh2o_gte_t *g,int32_t a,int32_t b,int32_t h)
-{
+void sh2o_psyq_SetFogNearFar(sh2o_gte_t *g,int32_t a,int32_t b,int32_t h) {
     int32_t d = (int32_t)((uint32_t)b - (uint32_t)a),q1,q2,q3;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_SETFOGNEARFAR);
     if(d < 100)
@@ -169,8 +153,7 @@ void sh2o_psyq_SetFogNearFar(sh2o_gte_t *g,int32_t a,int32_t b,int32_t h)
 }
 
 /* Contract tag psyq-transmatrix-1. Contract in sh2o/psyq.h. */
-sh2o_psyq_matrix_t *sh2o_psyq_TransMatrix(sh2o_gte_t *g,sh2o_psyq_matrix_t *m,const sh2o_psyq_vector_t *v)
-{
+sh2o_psyq_matrix_t *sh2o_psyq_TransMatrix(sh2o_gte_t *g,sh2o_psyq_matrix_t *m,const sh2o_psyq_vector_t *v) {
     int32_t x = v->vx,y = v->vy,z = v->vz;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_TRANSMATRIX);
     (void)g;
@@ -181,8 +164,7 @@ sh2o_psyq_matrix_t *sh2o_psyq_TransMatrix(sh2o_gte_t *g,sh2o_psyq_matrix_t *m,co
 }
 
 /* Contract tag psyq-transposematrix-1. Contract in sh2o/psyq.h. */
-sh2o_psyq_matrix_t *sh2o_psyq_TransposeMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m0,sh2o_psyq_matrix_t *m1)
-{
+sh2o_psyq_matrix_t *sh2o_psyq_TransposeMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m0,sh2o_psyq_matrix_t *m1) {
     uint32_t r9,r10,r11;
     int16_t h10;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_TRANSPOSEMATRIX);
@@ -206,8 +188,7 @@ sh2o_psyq_matrix_t *sh2o_psyq_TransposeMatrix(sh2o_gte_t *g,const sh2o_psyq_matr
 
 /* Contract tag psyq-compmatrix-1. Contract in sh2o/psyq.h. */
 sh2o_psyq_matrix_t *sh2o_psyq_CompMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m0,const sh2o_psyq_matrix_t *m1,
-                                            sh2o_psyq_matrix_t *m2)
-{
+                                            sh2o_psyq_matrix_t *m2) {
     const uint32_t cmd = 0x0486012u; /* MVMVA sf 1, RT, V0, no translation */
     uint32_t a1,a2,a3,b1,b2,b3,c1,c2,c3,v0,vz,t0,t1,t2;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_COMPMATRIX);
@@ -251,8 +232,7 @@ sh2o_psyq_matrix_t *sh2o_psyq_CompMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t 
 
 /* Contract tag psyq-applymatrix-1. Contract in sh2o/psyq.h. */
 sh2o_psyq_vector_t *sh2o_psyq_ApplyMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m,const sh2o_psyq_svector_t *v0,
-                                            sh2o_psyq_vector_t *v1)
-{
+                                            sh2o_psyq_vector_t *v1) {
     int32_t x,y,z;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_APPLYMATRIX);
     SH2OI_COUNT_IN();
@@ -270,31 +250,25 @@ sh2o_psyq_vector_t *sh2o_psyq_ApplyMatrix(sh2o_gte_t *g,const sh2o_psyq_matrix_t
 }
 
 /* ApplyMatrixLV's split of one component: hi = x SAR 15 and lo = x & 7FFFh, both of |x| with x's sign */
-static void sh2oi_split(int32_t x,uint32_t *hi,uint32_t *lo)
-{
-    if(x < 0)
-    {
+static void sh2oi_split(int32_t x,uint32_t *hi,uint32_t *lo) {
+    if(x < 0) {
         uint32_t n = 0u - (uint32_t)x;
         *hi = 0u - (uint32_t)sh2oi_sra((int32_t)n,15);
         *lo = 0u - (n & 0x7FFFu);
-    }
-    else
-    {
+    } else {
         *hi = (uint32_t)sh2oi_sra(x,15);
         *lo = (uint32_t)x & 0x7FFFu;
     }
 }
 
 /* ApplyMatrixLV's x8 of a MAC: negu, sll 3, negu for a negative word, else sll 3 */
-static uint32_t sh2oi_x8(uint32_t v)
-{
+static uint32_t sh2oi_x8(uint32_t v) {
     return (int32_t)v < 0 ? 0u - ((0u - v) << 3) : v << 3;
 }
 
 /* Contract tag psyq-applymatrixlv-1. Contract in sh2o/psyq.h. */
 sh2o_psyq_vector_t *sh2o_psyq_ApplyMatrixLV(sh2o_gte_t *g,const sh2o_psyq_matrix_t *m,const sh2o_psyq_vector_t *v0,
-                                            sh2o_psyq_vector_t *v1)
-{
+                                            sh2o_psyq_vector_t *v1) {
     uint32_t hx,hy,hz,lx,ly,lz,a1,a2,a3,b1,b2,b3;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_APPLYMATRIXLV);
     SH2OI_COUNT_IN();
@@ -321,8 +295,7 @@ sh2o_psyq_vector_t *sh2o_psyq_ApplyMatrixLV(sh2o_gte_t *g,const sh2o_psyq_matrix
 }
 
 /* Contract tag psyq-rottrans-1. Contract in sh2o/psyq.h. */
-void sh2o_psyq_RotTrans(sh2o_gte_t *g,const sh2o_psyq_svector_t *v0,sh2o_psyq_vector_t *v1,int32_t *flag)
-{
+void sh2o_psyq_RotTrans(sh2o_gte_t *g,const sh2o_psyq_svector_t *v0,sh2o_psyq_vector_t *v1,int32_t *flag) {
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_ROTTRANS);
     SH2OI_COUNT_IN();
     sh2o_gte_write(g,0,SH2OI_W(v0->vx,v0->vy));
@@ -336,29 +309,31 @@ void sh2o_psyq_RotTrans(sh2o_gte_t *g,const sh2o_psyq_svector_t *v0,sh2o_psyq_ve
 }
 
 /* Contract tag psyq-pushmatrix-1. Contract in sh2o/psyq.h. */
-int sh2o_psyq_PushMatrix(sh2o_gte_t *g,sh2o_psyq_mstack_t *s)
-{
+int sh2o_psyq_PushMatrix(sh2o_gte_t *g,sh2o_psyq_mstack_t *s) {
     int32_t top = s->top;
     uint32_t *e;
-    unsigned k;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_PUSHMATRIX);
     if(top >= 0x280)
         return -1;
     if(top < 0 || (top & 31))
         return -2;
     e = &s->w[(uint32_t)top >> 2];
-    for(k = 0; k < 8; k++)
-        e[k] = sh2o_gte_read(g,32 + k);
+    e[0] = g->r[32];
+    e[1] = g->r[33];
+    e[2] = g->r[34];
+    e[3] = g->r[35];
+    e[4] = (uint32_t)(int32_t)(int16_t)(uint16_t)g->r[36];
+    e[5] = g->r[37];
+    e[6] = g->r[38];
+    e[7] = g->r[39];
     s->top = top + 32;
     return 0;
 }
 
 /* Contract tag psyq-popmatrix-1. Contract in sh2o/psyq.h. */
-int sh2o_psyq_PopMatrix(sh2o_gte_t *g,sh2o_psyq_mstack_t *s)
-{
+int sh2o_psyq_PopMatrix(sh2o_gte_t *g,sh2o_psyq_mstack_t *s) {
     int32_t top = s->top;
     const uint32_t *e;
-    unsigned k;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_POPMATRIX);
     if(top <= 0)
         return -1;
@@ -367,14 +342,22 @@ int sh2o_psyq_PopMatrix(sh2o_gte_t *g,sh2o_psyq_mstack_t *s)
     top -= 32;
     s->top = top;
     e = &s->w[(uint32_t)top >> 2];
-    for(k = 0; k < 8; k++)
-        sh2o_gte_write(g,32 + k,e[k]);
+    g->r[32] = e[0];
+    g->r[33] = e[1];
+    g->r[34] = e[2];
+    g->r[35] = e[3];
+    g->r[36] = e[4];
+    g->r[37] = e[5];
+    g->r[38] = e[6];
+    g->r[39] = e[7];
+    SH2OI_COUNT_STORE(SH2O_COUNT_WRITE_RT,5);
+    SH2OI_COUNT_STORE(SH2O_COUNT_WRITE_TR,3);
     return 0;
 }
 
 /* ratan2's table, i 0..1024: floor(atan((i + 3/8) / 1024) * 2048 / pi + 1/2), equal to the object's table */
 /* clang-format off */
-static const int16_t sh2oi_ratan_tbl[1025] = {
+static const int16_t sh2oi_ratan_tbl[1025] SH2OI_RODATA(sh2oi_ratan_tbl) = {
     0,1,2,2,3,3,4,5,5,6,7,7,8,9,9,10,
     10,11,12,12,13,14,14,15,16,16,17,17,18,19,19,20,
     21,21,22,23,23,24,24,25,26,26,27,28,28,29,30,30,
@@ -444,39 +427,32 @@ static const int16_t sh2oi_ratan_tbl[1025] = {
 /* clang-format on */
 
 /* the halfword at ratan_tbl + 2q, q 0..1024 (every q a checked divide gives; 0 outside, never reached) */
-static int32_t sh2oi_ratan_at(int32_t q)
-{
+static int32_t sh2oi_ratan_at(int32_t q) {
     return (uint32_t)q <= 1024u ? sh2oi_ratan_tbl[q] : 0;
 }
 
 /* Contract tag psyq-ratan2-1. Contract in sh2o/psyq.h. */
-int32_t sh2o_psyq_ratan2(sh2o_gte_t *g,int32_t y,int32_t x)
-{
+int32_t sh2o_psyq_ratan2(sh2o_gte_t *g,int32_t y,int32_t x) {
     int xneg = 0,yneg = 0;
     int32_t q,t;
     SH2OI_COUNT_NAME(SH2O_COUNT_PSYQ_RATAN2);
     (void)g;
-    if(x < 0)
-    {
+    if(x < 0) {
         xneg = 1;
         x = (int32_t)(0u - (uint32_t)x);
     }
-    if(y < 0)
-    {
+    if(y < 0) {
         yneg = 1;
         y = (int32_t)(0u - (uint32_t)y);
     }
     if(x == 0 && y == 0)
         return 0;
-    if(y < x)
-    {
+    if(y < x) {
         if(!((uint32_t)y & 0x7FE00000u ? sh2oi_div(y,sh2oi_sra(x,10),&q) :
                 sh2oi_div((int32_t)((uint32_t)y << 10),x,&q)))
             return 0;
         t = sh2oi_ratan_at(q);
-    }
-    else
-    {
+    } else {
         if(!((uint32_t)x & 0x7FE00000u ? sh2oi_div(x,sh2oi_sra(y,10),&q) :
                 sh2oi_div((int32_t)((uint32_t)x << 10),y,&q)))
             return 0;

@@ -34,21 +34,21 @@ extern uint32_t sh2oi_count_depth;
 #endif
 
 /* The write group of control register reg (sh2o/count.h). */
-static inline void sh2oi_count_write(unsigned reg)
-{
+static inline void sh2oi_count_write(unsigned reg) {
     unsigned i = SH2O_COUNT_WRITE_OTHER;
-    if(reg >= 32 && reg <= 36)
+    if(reg >= 32 && reg <= 36) {
         i = SH2O_COUNT_WRITE_RT;
-    else if(reg >= 37 && reg <= 39)
+    } else if(reg >= 37 && reg <= 39) {
         i = SH2O_COUNT_WRITE_TR;
-    else if(reg >= 40 && reg <= 44)
+    } else if(reg >= 40 && reg <= 44) {
         i = SH2O_COUNT_WRITE_LLM;
-    else if(reg >= 45 && reg <= 47)
+    } else if(reg >= 45 && reg <= 47) {
         i = SH2O_COUNT_WRITE_BK;
-    else if(reg >= 48 && reg <= 52)
+    } else if(reg >= 48 && reg <= 52) {
         i = SH2O_COUNT_WRITE_LCM;
-    else if(reg >= 53 && reg <= 55)
+    } else if(reg >= 53 && reg <= 55) {
         i = SH2O_COUNT_WRITE_FC;
+    }
     sh2oi_count[i]++;
 }
 #define SH2OI_COUNT_WRITE(reg) sh2oi_count_write(reg)
@@ -65,4 +65,4 @@ static inline void sh2oi_count_write(unsigned reg)
 #define SH2OI_COUNT_STORE(i,n) ((void)0)
 #endif
 
-#endif /* SH2O_COUNT_INTERNAL_H */
+#endif

@@ -36,28 +36,24 @@ extern "C" {
 extern void (*sh2o_psyq_break)(uint32_t code);
 
 /* PS1 MATRIX (32 bytes): m at 0..0x11 (row major), pad 0x12, t at 0x14, 0x18, 0x1C */
-typedef struct sh2o_psyq_matrix
-{
+typedef struct sh2o_psyq_matrix {
     int16_t m[3][3];
     int16_t pad;
     int32_t t[3];
 } sh2o_psyq_matrix_t;
 
-/* PS1 VECTOR (16 bytes) and SVECTOR (8 bytes) */
-typedef struct sh2o_psyq_vector
-{
+/* PS1 VECTOR (16 bytes) */
+typedef struct sh2o_psyq_vector {
     int32_t vx,vy,vz,pad;
 } sh2o_psyq_vector_t;
-
-typedef struct sh2o_psyq_svector
-{
+/* PS1 SVECTOR (8 bytes) */
+typedef struct sh2o_psyq_svector {
     int16_t vx,vy,vz,pad;
 } sh2o_psyq_svector_t;
 
 /* PushMatrix/PopMatrix's state (the object's two stack globals: top and the stack), caller-owned; zero = empty.
  * top: bytes used, 0..0x280 in steps of 32 (20 entries); entry k = w[8k..8k+7]: CFC2 32..39 (RT, TR) as read. */
-typedef struct sh2o_psyq_mstack
-{
+typedef struct sh2o_psyq_mstack {
     int32_t top;
     uint32_t w[160];
 } sh2o_psyq_mstack_t;
@@ -182,4 +178,4 @@ int32_t sh2o_psyq_ratan2(sh2o_gte_t *g,int32_t y,int32_t x);
 #ifdef __cplusplus
 }
 #endif
-#endif /* SH2O_PSYQ_H */
+#endif

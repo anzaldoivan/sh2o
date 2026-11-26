@@ -123,19 +123,17 @@ int main(void) {
     pin("list planted",lt.planted,SH2O_ZAM_PIN_LIST_PLANTED);
     pin("list caught",lt.caught,SH2O_ZAM_PIN_LIST_CAUGHT);
     /* the delegate's bench entry (its fixed subset of the suite) */
-    {
-        uint32_t w[SH2O_ZAM_W_SIZE];
-        unsigned long erc = (unsigned long)sh2o_zam_test_entry(w,zero_clock);
-        printf("sh2o_zam_test_entry: returned %lu, rc 0x%lX, %lu cases, %lu delegated, %lu refused, digest 0x%08lX\n",
-            erc,(unsigned long)w[SH2O_ZAM_W_RC],(unsigned long)w[SH2O_ZAM_W_CASES],
-            (unsigned long)w[SH2O_ZAM_W_DELEG],(unsigned long)w[SH2O_ZAM_W_REFUSED],
-            (unsigned long)w[SH2O_ZAM_W_DIGEST]);
-        pin("entry rc",(unsigned long)w[SH2O_ZAM_W_RC],0);
-        pin("entry cases",(unsigned long)w[SH2O_ZAM_W_CASES],2348);
-        pin("entry delegated",(unsigned long)w[SH2O_ZAM_W_DELEG],382);
-        pin("entry refused",(unsigned long)w[SH2O_ZAM_W_REFUSED],1966);
-        pin("entry digest",(unsigned long)w[SH2O_ZAM_W_DIGEST],0xDFAF9742ul);
-    }
+    uint32_t w[SH2O_ZAM_W_SIZE];
+    unsigned long erc = (unsigned long)sh2o_zam_test_entry(w,zero_clock);
+    printf("sh2o_zam_test_entry: returned %lu, rc 0x%lX, %lu cases, %lu delegated, %lu refused, digest 0x%08lX\n",
+        erc,(unsigned long)w[SH2O_ZAM_W_RC],(unsigned long)w[SH2O_ZAM_W_CASES],
+        (unsigned long)w[SH2O_ZAM_W_DELEG],(unsigned long)w[SH2O_ZAM_W_REFUSED],
+        (unsigned long)w[SH2O_ZAM_W_DIGEST]);
+    pin("entry rc",(unsigned long)w[SH2O_ZAM_W_RC],0);
+    pin("entry cases",(unsigned long)w[SH2O_ZAM_W_CASES],2348);
+    pin("entry delegated",(unsigned long)w[SH2O_ZAM_W_DELEG],382);
+    pin("entry refused",(unsigned long)w[SH2O_ZAM_W_REFUSED],1966);
+    pin("entry digest",(unsigned long)w[SH2O_ZAM_W_DIGEST],0xDFAF9742ul);
     if(failures != 0)
         return 1;
     printf("zam: every pinned figure equal\n");

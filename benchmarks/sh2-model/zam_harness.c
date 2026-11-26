@@ -186,11 +186,12 @@ static int zam_digest(unsigned variant,int plant_digest) {
     printf("zam: %s: most instructions of one _part call (%u items): %" PRIu64 "\n",zam_variants[variant],ZAM_CHUNK,
         most);
     if(rc!=0) {
-        if(rc>>12==3u&&(rc&0xF00u)!=0xF00u)
+        if(rc>>12==3u&&(rc&0xF00u)!=0xF00u) {
             fprintf(stderr,"zam: %s: rc %x: the known answer of edge row %u does not hold\n",zam_variants[variant],rc,
                 (rc>>4)&0xFFu);
-        else
+        } else {
             fprintf(stderr,"zam: %s: rc %x: a check of the suite fails\n",zam_variants[variant],rc);
+        }
         bad=1;
     }
     if(most>=ZAM_LIMIT) {

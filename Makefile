@@ -25,13 +25,15 @@ endif
 # The SH-2 image is the Yaul image that SH2ZAM's CI also pins. Set SH2_IMAGE to
 # use another image that has sh2eb-elf-gcc.
 SH2_IMAGE ?= ijacquez/yaul@sha256:b6d272204767cd0a734139dd3a2ab298ef5912fb7b7224b78e6d9fac1a7825a6
+# The pinned Yabause source of make sh2-model, outside build/ (CI keeps it in a cache).
+YABAUSE_SOURCE ?= .cache/yabause
 
-# $(call variant,<folder>,<cmake options>): configure, build and run the tests
-# (not the long proofs: make proofs runs them).
+# $(call variant,<folder>,<cmake options>[,<environment>]): configure, build and run the
+# tests (not the long proofs: make proofs runs them); <environment> goes before ctest.
 define variant
 	cmake -S . -B $(1) -DCMAKE_C_COMPILER=$(CC) $(2)
 	cmake --build $(1) --parallel
-	ctest --test-dir $(1) --output-on-failure -LE proof
+	$(3) ctest --test-dir $(1) --output-on-failure -LE proof
 endef
 
 .PHONY: all test proofs proof-tests check style public-check pin-check oracles oracles-check sh2-manifest sanitize strict portable \
@@ -49,7 +51,7 @@ test: all
 proofs: all
 	ctest --test-dir $(BUILD) --output-on-failure
 
-# The long proofs only (label proof): the CI job sh2o proofs runs it.
+# The long proofs only (label proof).
 proof-tests: all
 	ctest --test-dir $(BUILD) --output-on-failure -L proof
 
@@ -57,11 +59,14 @@ proof-tests: all
 check: style public-check pin-check oracles-check
 
 style:
+	$(PYTHON) scripts/style_check.py --self-test
 	$(PYTHON) scripts/style_check.py
 
 # Only files and text that may be public. TREE: a directory or a revision
 # (default: HEAD). The self-test first proves that each rule still fires.
 public-check:
+	$(PYTHON) scripts/check_ci.py --self-test
+	$(PYTHON) scripts/check_ci.py
 	$(PYTHON) scripts/check_public.py --self-test
 	$(PYTHON) scripts/check_public.py $(TREE)
 
@@ -92,7 +97,8 @@ oracles-check: oracles
 
 # ASan, UBSan and LeakSanitizer (on with ASan on Linux). Any report stops the test.
 sanitize:
-	$(call variant,$(OUT)-sanitize,-DCMAKE_BUILD_TYPE=Debug -DSH2O_SANITIZE=ON -DSH2O_STRICT=ON)
+	$(call variant,$(OUT)-sanitize,-DCMAKE_BUILD_TYPE=Debug -DSH2O_SANITIZE=ON -DSH2O_STRICT=ON,\
+	    UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ASAN_OPTIONS=detect_leaks=1)
 
 strict:
 	$(call variant,$(OUT)-strict,-DCMAKE_BUILD_TYPE=Release -DSH2O_STRICT=ON)
@@ -169,7 +175,7 @@ sh2-model:
 	mkdir -p build
 	docker run --rm --network none --user $$(id -u):$$(id -g) -v $(CURDIR):/work -w /work \
 	    -e SH2_IMAGE=$(SH2_IMAGE) -e SH2O_ZAM=$(SH2O_ZAM) $(SH2_IMAGE) sh scripts/sh2_model.sh elf
-	SH2_IMAGE=$(SH2_IMAGE) SH2O_ZAM=$(SH2O_ZAM) bash scripts/sh2_model.sh run
+	SH2_IMAGE=$(SH2_IMAGE) SH2O_ZAM=$(SH2O_ZAM) YABAUSE_SOURCE=$(YABAUSE_SOURCE) bash scripts/sh2_model.sh run
 
 # SH2ZAM's own tests, built from the pinned submodule without a change.
 sh2zam-tests:
@@ -197,20 +203,22 @@ psyq47:
 	    $(CURDIR)/$(OUT)-zam/psyq47-junit.xml || fail=1; \
 	exit $$fail
 
-# All local jobs of the GitHub workflows.
+# All local jobs of the GitHub workflows: make check, then each make run of a CI job row.
 ci: check
-	$(MAKE) test CC=gcc
-	$(MAKE) test CC=clang
-	$(MAKE) test CC=gcc SH2O_ZAM=ON
-	$(MAKE) test CC=clang SH2O_ZAM=ON
-	$(MAKE) proof-tests CC=gcc
-	$(MAKE) strict CC=gcc
-	$(MAKE) strict CC=clang
-	$(MAKE) sanitize CC=gcc
-	$(MAKE) sanitize CC=clang
-	$(MAKE) portable CC=gcc
-	$(MAKE) install-check CC=gcc
+	$(MAKE) proofs CC=gcc SH2O_REQUIRE_PSYZ=1
+	$(MAKE) test CC=clang SH2O_REQUIRE_PSYZ=1
+	$(MAKE) test CC=gcc SH2O_ZAM=ON SH2O_REQUIRE_PSYZ=1
+	$(MAKE) test CC=clang SH2O_ZAM=ON SH2O_REQUIRE_PSYZ=1
+	$(MAKE) strict CC=gcc SH2O_REQUIRE_PSYZ=1
+	$(MAKE) strict CC=clang SH2O_REQUIRE_PSYZ=1
+	$(MAKE) sanitize CC=gcc SH2O_REQUIRE_PSYZ=1
+	$(MAKE) sanitize CC=clang SH2O_REQUIRE_PSYZ=1
+	$(MAKE) portable CC=gcc SH2O_REQUIRE_PSYZ=1
+	$(MAKE) portable CC=clang SH2O_REQUIRE_PSYZ=1
+	$(MAKE) install-check CC=gcc SH2O_REQUIRE_PSYZ=1
+	$(MAKE) install-check CC=clang SH2O_REQUIRE_PSYZ=1
 	$(MAKE) sh2zam-tests CC=gcc
+	$(MAKE) sh2zam-tests CC=clang
 	$(MAKE) psyq47 CC=gcc
 	$(MAKE) cross
 	$(MAKE) sh2-model

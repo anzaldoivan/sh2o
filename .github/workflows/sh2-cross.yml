@@ -1,29 +1,33 @@
+# The job rules are in CONTRIBUTING.md, section "CI jobs"; scripts/check_ci.py checks them.
 # SH-2 cross build of sh2o in the pinned Yaul image (the digest that SH2ZAM's
-# CI also uses). Native and portable builds; both must be big-endian SH-2
+# CI also uses; the Makefile holds it, and docker run pulls it by digest).
+# Native and portable builds; both must be big-endian SH-2
 # objects that need no C library function, and the sha256 of every object,
 # library and model ELF must equal tests/sh2/objects.sha256. Job sh2-model runs the oracle
-# vectors on the SH-2 instruction model (MODELLED cycles; it fetches Yabause).
-# Job sh2-model-zam runs every family with the experimental SH2ZAM delegate.
+# vectors on the SH-2 instruction model (MODELLED cycles; it fetches Yabause
+# once into a cache keyed by the pinned commit). Its row sh2-model-zam runs
+# every family with the experimental SH2ZAM delegate.
 name: sh2o SH-2 cross build
 on:
   push:
+    branches: [dev, main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
-env:
-  SH2_IMAGE: ijacquez/yaul@sha256:b6d272204767cd0a734139dd3a2ab298ef5912fb7b7224b78e6d9fac1a7825a6
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   sh2:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Pull the pinned Yaul image
-        run: docker pull "$SH2_IMAGE"
       - name: make cross
-        run: make cross SH2_IMAGE="$SH2_IMAGE"
+        run: make cross
       - name: Keep the object reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -35,50 +39,38 @@ jobs:
             build/sh2-static/
           if-no-files-found: ignore
   sh2-model:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: sh2-model
+            zam: OFF
+          - name: sh2-model-zam
+            zam: ON
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Pull the pinned Yaul image
-        run: docker pull "$SH2_IMAGE"
-      - name: make sh2-model
+      - name: Keep the pinned Yabause source
+        uses: actions/cache@v4
+        with:
+          path: .cache/yabause
+          key: yabause-7e38821dbac265490f115e163c523a939acda759
+      - name: make sh2-model SH2O_ZAM=${{ matrix.zam }}
         shell: bash
-        run: make sh2-model SH2_IMAGE="$SH2_IMAGE" | tee sh2-model-results.txt
+        run: make sh2-model SH2O_ZAM=${{ matrix.zam }} | tee ${{ matrix.name }}-results.txt
       - name: Keep the model results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sh2-model-results
+          name: ${{ matrix.name }}-results
           path: |
-            sh2-model-results.txt
-            build/sh2-model/native/
-            build/sh2-model/portable/
-            build/sh2-model/plant.out
-            build/sh2-model/plant.err
-          if-no-files-found: ignore
-  sh2-model-zam:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Pull the pinned Yaul image
-        run: docker pull "$SH2_IMAGE"
-      - name: make sh2-model SH2O_ZAM=ON
-        shell: bash
-        run: make sh2-model SH2O_ZAM=ON SH2_IMAGE="$SH2_IMAGE" | tee sh2-model-zam-results.txt
-      - name: Keep the model results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sh2-model-zam-results
-          path: |
-            sh2-model-zam-results.txt
-            build/sh2-model-zam/native/
-            build/sh2-model-zam/portable/
-            build/sh2-model-zam/zam-plant-known.out
-            build/sh2-model-zam/zam-plant-known.err
-            build/sh2-model-zam/zam-plant-digest.out
-            build/sh2-model-zam/zam-plant-digest.err
+            ${{ matrix.name }}-results.txt
+            build/${{ matrix.name }}/native/
+            build/${{ matrix.name }}/portable/
+            build/${{ matrix.name }}/*.out
+            build/${{ matrix.name }}/*.err
           if-no-files-found: ignore

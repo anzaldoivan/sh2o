@@ -58,20 +58,22 @@ static void run(unsigned which,const k_vector_t *vector,uint8_t *out) {
             v[i]=get_i16(in+20+2*i);
             t[i]=(int32_t)get_u32(in+26+4*i);
         }
-        if(which)
+        if(which) {
             sh2o_k_mvb3_c(w,v,t,r);
-        else
+        } else {
             sh2o_k_mvb3(w,v,t,r);
+        }
         for(i=0;i<3;i++)
             put_i64(out+8*i,r[i]);
         break;
     case K_OP_GPF3:
         for(i=0;i<4;i++)
             w[i]=get_u32(in+4*i);
-        if(which)
+        if(which) {
             sh2o_k_gpf3_c(w,r);
-        else
+        } else {
             sh2o_k_gpf3(w,r);
+        }
         for(i=0;i<3;i++)
             put_i64(out+8*i,r[i]);
         break;
@@ -80,10 +82,11 @@ static void run(unsigned which,const k_vector_t *vector,uint8_t *out) {
             w[i]=get_u32(in+4*i);
         for(i=0;i<3;i++)
             mac[i]=get_u32(in+16+4*i);
-        if(which)
+        if(which) {
             sh2o_k_gpl3_c(w,mac,in[28],r);
-        else
+        } else {
             sh2o_k_gpl3(w,mac,in[28],r);
+        }
         for(i=0;i<3;i++)
             put_i64(out+8*i,r[i]);
         break;

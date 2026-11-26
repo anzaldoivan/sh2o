@@ -11,6 +11,9 @@
 #include <stdint.h>
 
 #include "sh2o/psyq.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SH2O_PSYQ_SEED 0x50535951u
 #define SH2O_PSYQ_BODIES 19u
@@ -33,8 +36,7 @@ int sh2o_psyq_test_digest_part(uint32_t first,uint32_t n,uint32_t s[2]);
 
 /* One region of a case: kind M MATRIX, V VECTOR, S SVECTOR, L long, K matrix stack; only the field of its kind is
  * used. */
-typedef struct sh2o_psyq_test_region
-{
+typedef struct sh2o_psyq_test_region {
     char kind;
     sh2o_psyq_matrix_t m;
     sh2o_psyq_vector_t v;
@@ -44,8 +46,7 @@ typedef struct sh2o_psyq_test_region
 } sh2o_psyq_test_region_t;
 
 /* One drawn case: body (its index in case order), nr regions, integer arguments a (0 when not drawn), the image g. */
-typedef struct sh2o_psyq_test_case
-{
+typedef struct sh2o_psyq_test_case {
     uint32_t body,nr;
     int32_t a[3];
     sh2o_gte_t g;
@@ -59,4 +60,7 @@ typedef struct sh2o_psyq_test_case
 void sh2o_psyq_test_case_draw(uint32_t i,uint32_t s[2],sh2o_psyq_test_case_t *c);
 void sh2o_psyq_test_case_hash(const sh2o_psyq_test_case_t *c,uint32_t ret,uint32_t s[2]);
 
-#endif /* SH2O_PSYQ_TEST_H */
+#ifdef __cplusplus
+}
+#endif
+#endif

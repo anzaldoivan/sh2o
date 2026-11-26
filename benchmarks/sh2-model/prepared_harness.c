@@ -527,10 +527,11 @@ int main(int argc,char **argv) {
         for(unsigned l=0;l<2;l++) {
             double load=prep_mean(&s[l?PREP_LOAD_ALL:PREP_LOAD_RTTR]);
             char even[32];
-            if(cw>=a)
+            if(cw>=a) {
                 snprintf(even,sizeof(even),"none");
-            else
+            } else {
                 snprintf(even,sizeof(even),"%.2f",load/(a-cw));
+            }
             printf("%-9s %-9s %12.2f %12.2f %12.2f %12s\n",prep_variants[variant],l?"ALL":"RT|TR",cw+load/4.27,
                 cw+load/3.06,a,even);
         }

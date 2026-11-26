@@ -395,11 +395,12 @@ int main(int argc,char **argv) {
         }
         printf("%-9s load RT|NONE: %.2f cycles (%.2f instructions), %" PRIu64 " images\n",lp_variants[variant],
             lp_mean(ld),ld->sum_instructions/(double)ld->count,ld->count);
-        if(even)
+        if(even) {
             printf("%-9s break-even n: %u (the first n where arm C's whole call is under today's)\n",
                 lp_variants[variant],even);
-        else
+        } else {
             printf("%-9s break-even n: none in 1..8\n",lp_variants[variant]);
+        }
     }
     return 0;
 }

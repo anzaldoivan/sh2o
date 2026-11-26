@@ -20,12 +20,20 @@
 #if defined(SH2O_REQUIRE_SH2) && !SH2OI_NATIVE
 #error "SH2O_REQUIRE_SH2 is set, but the compiler does not target the SH-2."
 #endif
-
+/* Marks a function of a header as static inline. The compiler may choose not to inline it. */
 #define SH2OI_INLINE static inline
+/* Marks a function of a header as static inline. GCC always inlines it; other compilers may not. */
 #if defined(__GNUC__)
 #define SH2OI_FORCE_INLINE static inline __attribute__((always_inline))
 #else
 #define SH2OI_FORCE_INLINE static inline
+#endif
+/* Puts a table in its own section .rodata.<name>, for --gc-sections and a linker script; empty under PIC/PIE, where
+ * pointer tables need relocations and so a writable section. */
+#if defined(__GNUC__) && defined(__ELF__) && !defined(__PIC__)
+#define SH2OI_RODATA(name) __attribute__((section(".rodata." #name)))
+#else
+#define SH2OI_RODATA(name)
 #endif
 
 /* Kernel entry and exit hooks (e.g. saving MACH/MACL around a kernel an interrupt handler shares). No-op on the
@@ -33,8 +41,9 @@
 #ifndef SH2O_K_ENTER
 #define SH2O_K_ENTER() ((void)0)
 #endif
+/* Kernel exit hook: the pair of SH2O_K_ENTER. No-op on the host. */
 #ifndef SH2O_K_LEAVE
 #define SH2O_K_LEAVE() ((void)0)
 #endif
 
-#endif /* SH2O_CDEFS_H */
+#endif

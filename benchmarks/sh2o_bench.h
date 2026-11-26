@@ -12,16 +12,14 @@
 typedef uint32_t (*sh2o_bench_tick)(void);
 typedef void (*sh2o_bench_fn)(uint32_t k);
 
-typedef struct sh2o_bench_op
-{
+typedef struct sh2o_bench_op {
     const char *name;
     sh2o_bench_fn ref;  /* the C reference over K inputs */
     sh2o_bench_fn cand; /* the candidate over the same K inputs */
     uint32_t K;
 } sh2o_bench_op;
 
-typedef enum
-{
+typedef enum {
     SH2O_BENCH_BETTER,
     SH2O_BENCH_NOISE,
     SH2O_BENCH_WORSE

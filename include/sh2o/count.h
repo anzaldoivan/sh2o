@@ -91,4 +91,4 @@ void sh2o_count_reset(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /* SH2O_COUNT_H */
+#endif

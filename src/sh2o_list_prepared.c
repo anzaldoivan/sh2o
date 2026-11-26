@@ -26,41 +26,52 @@
 #endif
 
 /* Contract tag gte-mvmva-list-prepared-1. Contract in sh2o/gte_prepared.h. */
-void sh2o_gte_mvmva_list_prepared(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsigned n,uint32_t (*out)[6])
-{
-    unsigned mx = cmd >> 17 & 3u,cv = cmd >> 13 & 3u,ts = cv == 3u ? 2u : cv,k,i,e;
-    uint32_t *r = g->r;
+void sh2o_gte_mvmva_list_prepared(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsigned n,uint32_t (*out)[6]) {
+    /* Rows are TR, BK, far colour (refused), NONE; columns are RT, LIGHT, COLOR, reserved (refused). */
+    static const uint8_t sh2oi_parts_by_cv_mx[16] SH2OI_RODATA(sh2oi_parts_by_cv_mx) = {
+        SH2O_GTE_PREPARED_TR | SH2O_GTE_PREPARED_RT,
+        SH2O_GTE_PREPARED_TR | SH2O_GTE_PREPARED_LIGHT,
+        SH2O_GTE_PREPARED_TR | SH2O_GTE_PREPARED_COLOR,0,
+        SH2O_GTE_PREPARED_BK | SH2O_GTE_PREPARED_RT,
+        SH2O_GTE_PREPARED_BK | SH2O_GTE_PREPARED_LIGHT,
+        SH2O_GTE_PREPARED_BK | SH2O_GTE_PREPARED_COLOR,0,
+        0,0,0,0,
+        SH2O_GTE_PREPARED_NONE | SH2O_GTE_PREPARED_RT,
+        SH2O_GTE_PREPARED_NONE | SH2O_GTE_PREPARED_LIGHT,
+        SH2O_GTE_PREPARED_NONE | SH2O_GTE_PREPARED_COLOR,0
+    };
+    unsigned mx,cv,ts,k,i,e,key,parts;
+    uint32_t *r;
     uint32_t f = 0;
-    int32_t lo = (cmd >> 10 & 1u) ? 0 : -0x8000; /* lower IR limit (lm) */
-    int fast = 0;
+    int32_t lo;
     sh2o_gte_prepared_t p;
     SH2OI_COUNT_NAME(SH2O_COUNT_LIST_PREPARED_CALLS);
     if(!n)
         return;
-    if((cmd >> 19 & 1u) && !(cmd >> 15 & 3u) && mx != 3u && cv != 2u
+    key = cmd >> 13;
+    /* Require sf=1 and V0 before decoding the two selectors. */
+    if((key & 0x4cu) != 0x40u)
+        goto fallback;
+    mx = key >> 4 & 3u;
+    cv = key & 3u;
+    parts = sh2oi_parts_by_cv_mx[(cv << 2) | mx];
+    if(!parts)
+        goto fallback;
 #if SH2OI_NATIVE
-        && !sh2oi_k_sr_s()
+    if(sh2oi_k_sr_s())
+        goto fallback;
 #endif
-    )
-    {
-        /* the part bits of mx (RT, LIGHT, COLOR) and ts (TR, BK, NONE): x + 1 + (x SHR 1) is 1 SHL x for x 0..2,
-         * constant shifts only (the SH-2 has no variable shift) */
-        SH2OI_COUNT_IN();
-        sh2o_gte_prepared_load(&p,g,(mx + 1u + (mx >> 1)) | (ts + 1u + (ts >> 1)) << 3);
-        SH2OI_COUNT_OUT();
-        fast = p.ok[ts];
-    }
-    if(!fast)
-    {
-        SH2OI_COUNT_IN();
-        sh2o_gte_mvmva_list(g,cmd,v,n,out);
-        SH2OI_COUNT_OUT();
-        return;
-    }
+    ts = cv - (cv >> 1);
+    SH2OI_COUNT_IN();
+    sh2o_gte_prepared_load(&p,g,parts);
+    SH2OI_COUNT_OUT();
+    if(!p.ok[ts])
+        goto fallback;
+    r = g->r;
+    lo = (int32_t)(((cmd & 0x400u) - 0x400u) << 5);
     SH2OI_COUNT_STORE(SH2O_COUNT_LIST_ITEMS,n);
     SH2OI_COUNT_STORE(SH2O_COUNT_OP + 0x12u,n);
-    for(k = 0; k < n; k++)
-    {
+    for(k = 0; k < n; k++) {
         int16_t x[3];
         int32_t mac[3];
 #if SH2OI_LIST_PREPARED_MUTANT == 2
@@ -78,17 +89,13 @@ void sh2o_gte_mvmva_list_prepared(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)
 #endif
         /* the sf=1 tail: MAC1-3, IR1-3 saturated (lm) as MFC2 reads them, FLAG 24-22 reset per item */
         f = 0;
-        for(i = 0; i < 3; i++)
-        {
+        for(i = 0; i < 3; i++) {
             int32_t m = mac[i];
             out[k][3 + i] = (uint32_t)m;
-            if(m < lo)
-            {
+            if(m < lo) {
                 f |= b;
                 m = lo;
-            }
-            else if(m > 0x7FFF)
-            {
+            } else if(m > 0x7FFF) {
                 f |= b;
                 m = 0x7FFF;
             }
@@ -115,4 +122,9 @@ void sh2o_gte_mvmva_list_prepared(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)
     r[26] = out[e][4];
     r[27] = out[e][5];
     r[63] = f;
+    return;
+fallback:
+    SH2OI_COUNT_IN();
+    sh2o_gte_mvmva_list(g,cmd,v,n,out);
+    SH2OI_COUNT_OUT();
 }

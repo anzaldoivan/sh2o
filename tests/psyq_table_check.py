@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import psyq_tables  # noqa: E402
 
 COUNT = 1025
-LITERAL = re.compile(r"static const int16_t sh2oi_ratan_tbl\[(\d+)\] = \{([^}]*)\};")
+LITERAL = re.compile(r"static const int16_t sh2oi_ratan_tbl\[(\d+)\](?: SH2OI_RODATA\(\w+\))? = \{([^}]*)\};")
 
 
 def main():

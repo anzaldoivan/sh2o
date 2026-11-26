@@ -57,14 +57,15 @@ int sh2o_zam_SetFogNearFar(sh2o_gte_t *g,int32_t a,int32_t b,int32_t h);
  *   Proof:  vectors (tests/suite/sh2o_zam_test_suite.c sh2o_zam_list_trial: 0 differences vs the list on 64
  *           registers and out, a planted mismatch caught). */
 #define SH2O_ZAM_LIST_MAX 32u /* zam-mvmva-list-1's largest n (one plan's points on the stack) */
+/* Contract tag zam-mvmva-list-1: the contract above. */
 int sh2o_zam_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsigned n,uint32_t (*out)[6]);
 
-/* test-only knobs (tests/suite/sh2o_zam_test_suite.c): bypass != 0 makes sh2o_zam_mac3 return 0 at once (the GTE
- * core's own kernel runs); delegated / refused count its non-bypassed calls by result */
+/* test-only knob (tests/suite/sh2o_zam_test_suite.c): bypass != 0 makes sh2o_zam_mac3 return 0 at once. */
 extern int sh2o_zam_bypass;
+/* test-only counters: the GTE core's own kernel runs when bypassed; delegated / refused count the non-bypassed calls by result */
 extern uint32_t sh2o_zam_delegated,sh2o_zam_refused;
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* SH2O_ZAM_EXPERIMENTAL_H */
+#endif
