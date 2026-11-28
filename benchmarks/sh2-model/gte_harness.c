@@ -321,14 +321,15 @@ static int gte_entry(unsigned variant,int plant_entry) {
             unsigned e;
             if(vector->op!=GTE_OP_CMD)
                 continue;
-            if((cmd&0x3Fu)==0x01u)
+            if((cmd&0x3Fu)==0x01u) {
                 e=0;
-            else if((cmd&0x3Fu)==0x30u)
+            } else if((cmd&0x3Fu)==0x30u) {
                 e=1;
-            else if((cmd&0x3Fu)==0x2Au)
+            } else if((cmd&0x3Fu)==0x2Au) {
                 e=2;
-            else
+            } else {
                 continue;
+            }
             u32 word=e==2?(plant_entry?cmd^0x80000u:cmd):plant_entry?gte_entry_planted[e]:gte_entry_words[e];
             gte_image(vector->in,sr);
             struct cost c=invoke_sr(gte_entry_symbols[e],g,e==2?cmd:0,0,0,sr);
@@ -371,10 +372,11 @@ static int gte_entry(unsigned variant,int plant_entry) {
     }
     for(unsigned e=0;e<3;e++) {
         char word[40];
-        if(e==2)
+        if(e==2) {
             snprintf(word,sizeof(word),"%s",plant_entry?"with the vector's word, sf flipped":"with the vector's word");
-        else
+        } else {
             snprintf(word,sizeof(word),"%08x",plant_entry?gte_entry_planted[e]:gte_entry_words[e]);
+        }
         printf("gte: %s: entry %s == command %s: SR.S 0: %zu of %zu differ, SR.S 1: %zu of %zu differ; "
             "== vector result (%s): SR.S 0: %zu of %zu differ, SR.S 1: %zu of %zu differ%s\n",
             gte_variants[variant],gte_entry_names[e],word,differ[0][e],vectors[e],differ[1][e],vectors[e],

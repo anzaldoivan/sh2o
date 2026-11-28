@@ -33,15 +33,13 @@ static sh2o_gte_t sh2o_model_listprep_g[3];
 static uint32_t sh2o_model_listprep_v[2][SH2O_MODEL_LISTPREP_N][2];
 static uint32_t sh2o_model_listprep_o[3][SH2O_MODEL_LISTPREP_N][6];
 
-static uint32_t sh2o_model_listprep_lcg(uint32_t *x)
-{
+static uint32_t sh2o_model_listprep_lcg(uint32_t *x) {
     *x=*x*1664525u+1013904223u;
     return *x;
 }
 
 /* 1 when cmd on image g is in the gate of src/sh2o_list_prepared.c without SR.S */
-static uint32_t sh2o_model_listprep_gate(const sh2o_gte_t *g,uint32_t cmd)
-{
+static uint32_t sh2o_model_listprep_gate(const sh2o_gte_t *g,uint32_t cmd) {
     unsigned mx=cmd>>17&3u,cv=cmd>>13&3u,i;
     if(!(cmd>>19&1u)||(cmd>>15&3u)||mx==3u||cv==2u)
         return 0;
@@ -54,8 +52,7 @@ static uint32_t sh2o_model_listprep_gate(const sh2o_gte_t *g,uint32_t cmd)
 }
 
 /* 1 when image a and rows oa differ from image b and rows ob */
-static uint32_t sh2o_model_listprep_differ(unsigned a,unsigned b)
-{
+static uint32_t sh2o_model_listprep_differ(unsigned a,unsigned b) {
     uint32_t d=0;
     unsigned i,j;
     for(i=0;i<64;i++)
@@ -70,8 +67,7 @@ static uint32_t sh2o_model_listprep_differ(unsigned a,unsigned b)
  * rand_image and run_check there (left operand first). Copies and zeroing go through volatile pointers (no memcpy
  * or memset call; the ELF has no C library). */
 void sh2o_model_listprep_check_part(uint32_t n,uint32_t s[5]);
-void sh2o_model_listprep_check_part(uint32_t n,uint32_t s[5])
-{
+void sh2o_model_listprep_check_part(uint32_t n,uint32_t s[5]) {
     uint32_t x=s[0],k=s[1],accepted=s[2],differ=s[3],caught=s[4],end=s[1]+n;
     sh2o_gte_t *g=sh2o_model_listprep_g;
     uint32_t (*v)[2]=sh2o_model_listprep_v[0],(*vs)[2]=sh2o_model_listprep_v[1];

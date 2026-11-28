@@ -210,9 +210,50 @@ static unsigned run_check(const arm *a,unsigned *accepted,unsigned *swapped) {
     return bad;
 }
 
+static int gate_paths_check(void) {
+    static const uint32_t v[2][2]={{0xffff0001u,0x55550002u},{0x0003fffcu,0xaaaafffbu}};
+    static const struct { uint32_t cmd,tr; unsigned n; unsigned long fallbacks; } cases[]={
+        {0x80012u,0,0,0},                   /* empty, null buffers */
+        {0x80012u,1,2,0},                   /* admitted RT and TR */
+        {0x00012u,1,2,1},                   /* early refusal (sf=0) */
+        {0x80012u,0x7ff40000u,2,1}          /* post-load refusal (TR bound) */
+    };
+    for(unsigned i=0;i<sizeof cases/sizeof cases[0];i++) {
+        sh2o_gte_t g={0},want,probe;
+        uint32_t out[2][6],ref[2][6],probe_out[2][6];
+        unsigned n=cases[i].n;
+        uint32_t cmd=cases[i].cmd;
+        const uint32_t (*items)[2]=n?v:NULL;
+        g.r[32]=g.r[34]=g.r[36]=0x1000u;
+        g.r[37]=cases[i].tr;
+        want=probe=g;
+        sh2o_gte_mvmva_list(&want,cmd,items,n,n?ref:NULL);
+        sh2o_gte_mvmva_list_prepared(&g,cmd,items,n,n?out:NULL);
+        if(n&&memcmp(out,ref,sizeof out)) {
+            fprintf(stderr,"list prepared: output mismatch on gate path %u\n",i);
+            return 1;
+        }
+        for(unsigned j=0;j<64;j++) {
+            if(g.r[j]!=want.r[j]||sh2o_gte_read(&g,j)!=sh2o_gte_read(&want,j)) {
+                fprintf(stderr,"list prepared: final register mismatch on gate path %u at word %u\n",i,j);
+                return 1;
+            }
+        }
+        probe_fallbacks=0;
+        sh2oi_list_prepared_probe(&probe,cmd,items,n,n?probe_out:NULL);
+        if(probe_fallbacks!=cases[i].fallbacks) {
+            fprintf(stderr,"list prepared: fallback mismatch on gate path %u\n",i);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main(void) {
     const arm probe={sh2oi_list_prepared_probe,"probe"};
     unsigned gated,pg,accepted,swapped,bad=0,d,pn=0;
+    if(gate_paths_check())
+        return EXIT_FAILURE;
     /* 1 */
     d=oracle_check(&arms[0],&gated);
     probe_fallbacks=0;

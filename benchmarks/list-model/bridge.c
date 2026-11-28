@@ -18,8 +18,7 @@ _Static_assert(sizeof(sh2o_gte_t)==256u,"the harness puts one sh2o_gte_t image a
 _Static_assert(SH2O_LIST_MAX==16u,"the io buffer has space for 16 items and 16 out rows");
 
 void sh2o_model_list_mac3(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]);
-void sh2o_model_list_mac3(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3])
-{
+void sh2o_model_list_mac3(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]) {
     sh2o_k_mvb3(w,v,t,out);
 }
 

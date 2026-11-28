@@ -24,8 +24,7 @@
 #endif
 
 /* Contract tag gte-dpct32-1. Contract in sh2o/gte.h. */
-void sh2o_gte_dpct32(sh2o_gte_t *g,uint32_t cmd)
-{
+void sh2o_gte_dpct32(sh2o_gte_t *g,uint32_t cmd) {
     uint32_t flag = 0; /* FLAG reset at the command start */
     uint32_t sf = cmd >> 19 & 1u;
     int32_t lo = (cmd >> 10 & 1u) ? 0 : -0x8000; /* lower IR limit of step 2 (lm) */
@@ -34,8 +33,7 @@ void sh2o_gte_dpct32(sh2o_gte_t *g,uint32_t cmd)
 #if SH2OI_DPCT32_MUTANT == 3
     uint32_t rgb0 = g->r[20];
 #endif
-    for(n = 0; n < 3; n++)
-    {
+    for(n = 0; n < 3; n++) {
 #if SH2OI_DPCT32_MUTANT == 3
         uint32_t c = rgb0;
 #else
@@ -43,8 +41,7 @@ void sh2o_gte_dpct32(sh2o_gte_t *g,uint32_t cmd)
 #endif
         uint32_t col = 0; /* the pushed colour's bytes, channel i in bits 16-23 after its turn */
         uint32_t fb = 1u << 27,ib = 1u << 24,cb = 1u << 21; /* FLAG bits 27-i, 24-i, 21-i */
-        for(i = 0; i < 3; i++)
-        {
+        for(i = 0; i < 3; i++) {
             uint32_t b = c & 0xFFu,fc = g->r[53 + i];
             int32_t mac,ir,v;
             /* step 1 */
@@ -55,17 +52,13 @@ void sh2o_gte_dpct32(sh2o_gte_t *g,uint32_t cmd)
                 flag |= fb;
 #endif
             mac = (int32_t)(sf ? fc - (b << 4) : (fc << 12) - (b << 16));
-            if(mac < -0x8000)
-            {
+            if(mac < -0x8000) {
                 flag |= ib;
                 ir = -0x8000;
-            }
-            else if(mac > 0x7FFF)
-            {
+            } else if(mac > 0x7FFF) {
                 flag |= ib;
                 ir = 0x7FFF;
-            }
-            else
+            } else
                 ir = mac;
             /* step 2 */
             mac = ir * ir0 + (int32_t)(b << 16);
@@ -75,25 +68,20 @@ void sh2o_gte_dpct32(sh2o_gte_t *g,uint32_t cmd)
             if(sf)
 #endif
                 mac = sh2oi_asr(mac,12);
-            if(mac < lo)
-            {
+            if(mac < lo) {
                 flag |= ib;
                 ir = lo;
-            }
-            else if(mac > 0x7FFF)
-            {
+            } else if(mac > 0x7FFF) {
                 flag |= ib;
                 ir = 0x7FFF;
-            }
-            else
+            } else
                 ir = mac;
             g->r[25 + i] = (uint32_t)mac;
             g->r[9 + i] = (uint32_t)ir;
             /* colour channel: MAC SAR 4 saturated 0..FFh; no FFh literal, whose pool word 00FFh objdump shows as
              * mac.l (the static check forbids it) */
             v = sh2oi_asr(mac,4);
-            if((uint32_t)v >> 8)
-            {
+            if((uint32_t)v >> 8) {
                 flag |= cb;
                 v = (int32_t)(uint8_t)(((uint32_t)v >> 31) - 1u); /* 0 below 0, FFh above */
             }

@@ -34,8 +34,7 @@ _Static_assert(offsetof(sh2o_gte_prepared_t,c)==0u&&offsetof(sh2o_gte_prepared_t
     offsetof(sh2o_gte_prepared_t,ok)==180u,"the harness reads the shadow at these offsets");
 
 void sh2o_model_prepared_mac3(const int32_t c[9],const uint32_t pre[6],const int16_t v[3],int32_t mac[3]);
-void sh2o_model_prepared_mac3(const int32_t c[9],const uint32_t pre[6],const int16_t v[3],int32_t mac[3])
-{
+void sh2o_model_prepared_mac3(const int32_t c[9],const uint32_t pre[6],const int16_t v[3],int32_t mac[3]) {
 #if SH2OI_NATIVE
     sh2oi_gte_prepared_mac3_l(c,pre,v,mac);
 #else
@@ -44,8 +43,7 @@ void sh2o_model_prepared_mac3(const int32_t c[9],const uint32_t pre[6],const int
 }
 
 void sh2o_model_prepared_mac3_a(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]);
-void sh2o_model_prepared_mac3_a(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3])
-{
+void sh2o_model_prepared_mac3_a(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]) {
     sh2o_k_mvb3(w,v,t,out);
 }
 
@@ -53,15 +51,13 @@ void sh2o_model_prepared_mac3_a(const uint32_t w[5],const int16_t v[3],const int
 static sh2o_gte_t sh2o_model_prepared_g[2];
 static sh2o_gte_prepared_t sh2o_model_prepared_p;
 
-static uint32_t sh2o_model_prepared_lcg(uint32_t *x)
-{
+static uint32_t sh2o_model_prepared_lcg(uint32_t *x) {
     *x=*x*1664525u+1013904223u;
     return *x;
 }
 
 /* FNV-1a 32 over a word's four bytes, high first */
-static uint32_t sh2o_model_prepared_fnv32(uint32_t h,uint32_t u)
-{
+static uint32_t sh2o_model_prepared_fnv32(uint32_t h,uint32_t u) {
     h=(h^(u>>24))*0x01000193u;
     h=(h^(u>>16&0xFFu))*0x01000193u;
     h=(h^(u>>8&0xFFu))*0x01000193u;
@@ -71,8 +67,7 @@ static uint32_t sh2o_model_prepared_fnv32(uint32_t h,uint32_t u)
 /* Check 2 of tests/test_prepared.c over vectors first..first+n-1. Each image is zeroed through a volatile pointer:
  * GCC keeps the loop (no memset call; the ELF has no C library). */
 void sh2o_model_prepared_digest_part(uint32_t first,uint32_t n,uint32_t s[3]);
-void sh2o_model_prepared_digest_part(uint32_t first,uint32_t n,uint32_t s[3])
-{
+void sh2o_model_prepared_digest_part(uint32_t first,uint32_t n,uint32_t s[3]) {
     uint32_t x=s[0],h=s[1],gated=s[2],i,w[5];
     int32_t t[3];
     sh2o_vec e;
@@ -103,8 +98,7 @@ void sh2o_model_prepared_digest_part(uint32_t first,uint32_t n,uint32_t s[3])
 /* Check 3 of tests/test_prepared.c: n runs from the generator s[0]. Each draw is its own statement, in the order of
  * rand_image there (left operand first). The copy goes through a volatile pointer (no memcpy call). */
 void sh2o_model_prepared_op_part(uint32_t n,uint32_t s[3]);
-void sh2o_model_prepared_op_part(uint32_t n,uint32_t s[3])
-{
+void sh2o_model_prepared_op_part(uint32_t n,uint32_t s[3]) {
     uint32_t x=s[0],differ=s[1],fast=s[2],k;
     sh2o_gte_t *g1=&sh2o_model_prepared_g[0],*g0=&sh2o_model_prepared_g[1];
     for(k=0;k<n;k++) {

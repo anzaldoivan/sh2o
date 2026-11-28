@@ -1,16 +1,22 @@
+# The job rules are in CONTRIBUTING.md, section "CI jobs"; scripts/check_ci.py checks them.
 # SH2ZAM's own tests, built without a change from the pinned submodule, so
 # that the SH2ZAM parts sh2o uses stay checked at the pin.
 name: SH2ZAM tests at the pin
 on:
   push:
+    branches: [dev, main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   sh2zam:
     name: SH2ZAM tests (${{ matrix.cc }})
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -19,5 +25,4 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - run: make pin-check
       - run: make sh2zam-tests CC=${{ matrix.cc }}

@@ -6,7 +6,7 @@ Copyright (c) 2026 sh2o Contributors. MIT License.
 Usage: python3 tests/mutant.py <family> <name> <root> <output folder>
 
 The script copies the src and include folders of root to the output folder
-and plants one known bug in the copy of one file. The old text must occur
+and plants one known bug in the copy of one file. Each text anchor must occur
 exactly one time; otherwise the script stops with an error and the build
 fails. CMakeLists.txt builds the copied src/*.c with tests/test_<family>.c and
 its suite, the copied include/ first, and runs it with --mutant <name>: the
@@ -23,7 +23,8 @@ GTE_INTERNAL = "src/sh2o_gte_internal.h"
 GTE_C = "src/sh2o_gte.c"
 PSYQ_C = "src/sh2o_psyq.c"
 LIST_C = "src/sh2o_list.c"
-# family: {name: (path under root, old text, new text)}
+POP_MATRIX_WRITES = "".join(f"    g->r[{32 + k}] = e[{k}];\n" for k in range(8))
+# family: {name: (path under root, old text, new text, optional (old, new) pairs)}
 MUTANTS = {
     "k": {
         "shift_11": (K_SW, "(uint32_t)tr << 12", "(uint32_t)tr << 11"),
@@ -42,8 +43,8 @@ MUTANTS = {
         "dropped_sz_push": (GTE_INTERNAL, "    g->r[16] = g->r[17];\n", ""),
         "dropped_colour_push": (GTE_INTERNAL, "    g->r[20] = g->r[21];\n", ""),
         "dpct_reads_rgbc": (GTE_C, "        c = g->r[20];", "        c = g->r[6];"),
-        "dpct_fifo_not_advanced": (GTE_C, "    for(n = 0; n < 3; n++)\n    {\n        c = g->r[20];",
-                                   "    c = g->r[20];\n    for(n = 0; n < 3; n++)\n    {"),
+        "dpct_fifo_not_advanced": (GTE_C, "    for(n = 0; n < 3; n++) {\n        c = g->r[20];",
+                                   "    c = g->r[20];\n    for(n = 0; n < 3; n++) {"),
     },
     # the psyq bodies: each mutant changes one body; the psyq suite must return non-zero
     "psyq": {
@@ -53,7 +54,7 @@ MUTANTS = {
                                "r[1] = SH2OI_W(m->m[1][0],m->m[0][2]);"),
         "transpose_dropped_store": (PSYQ_C, "    m1->m[1][1] = SH2OI_LO(r11);" + " " * 29 + "/* sh r11, 8 */\n", ""),
         "rot_trans_no_sf": (PSYQ_C, "0x0480012u); /* MVMVA sf 1, RT, V0, TR */", "0x0400012u);"),
-        "pop_matrix_bit": (PSYQ_C, "sh2o_gte_write(g,32 + k,e[k]);", "sh2o_gte_write(g,32 + k,e[k] ^ 1u);"),
+        "pop_matrix_bit": (PSYQ_C, POP_MATRIX_WRITES, POP_MATRIX_WRITES.replace("];\n", "] ^ 1u;\n")),
         "fog_no_break_hook": (PSYQ_C, "            sh2o_psyq_break(code);", "            (void)code;"),
         "ratan_index_off_by_one": (PSYQ_C, "t = 0x400 - sh2oi_ratan_at(q);", "t = 0x400 - sh2oi_ratan_at(q + 1);"),
         "init_geom_screen": (PSYQ_C, "sh2o_gte_write(g,58,0x3E8u);", "sh2o_gte_write(g,58,0x3E9u);"),
@@ -73,16 +74,23 @@ MUTANTS = {
                                  "sh2o_gte_write(g,38,(uint32_t)m->t[2]);"),
         "trans_matrix_store": (PSYQ_C, "m->t[1] = y;", "m->t[1] = z;"),
     },
-    # the MVMVA list: each mutant changes one line or block of the list; an oracle vector must differ
+    # the MVMVA list: each mutant plants one fault; an oracle vector must differ
     "list": {
-        "item_dropped": (LIST_C, "for(k = 0; k < n; k++)", "for(k = 0; k + 1 < n; k++)"),
-        "ir_not_sign_extended": (LIST_C, "out[k][1] = (uint32_t)(int32_t)(int16_t)(uint16_t)(r[10] & 0xFFFFu);",
-                                 "out[k][1] = r[10] & 0xFFFFu;"),
-        "mac_wrong_register": (LIST_C, "out[k][4] = r[26];", "out[k][4] = r[25];"),
-        "rows_swapped": (LIST_C, "    }\n}\n", "        if(k & 1u)\n            for(unsigned c = 0; c < 6; c++) {\n"
-                         "                uint32_t t = out[k][c];\n                out[k][c] = out[k - 1][c];\n"
-                         "                out[k - 1][c] = t;\n            }\n    }\n}\n"),
-        "vz0_not_loaded": (LIST_C, "        r[1] = v[k][1];\n", ""),
+        "item_dropped": (LIST_C, "for(; n; --n,++v,++out)", "for(; n > 1; --n,++v,++out)"),
+        "ir_not_sign_extended": (LIST_C, "out[0][1] = (uint32_t)(int32_t)(int16_t)(uint16_t)(r[10] & 0xFFFFu);",
+                                 "out[0][1] = r[10] & 0xFFFFu;"),
+        "mac_wrong_register": (LIST_C, "out[0][4] = r[26];", "out[0][4] = r[25];"),
+        "rows_swapped": (LIST_C, "    for(; n; --n,++v,++out) {\n",
+                         "    unsigned k = 0;\n    for(; n; --n,++v,++out,++k) {\n",
+                         ("        out[0][5] = r[27];\n",
+                          "        out[0][5] = r[27];\n"
+                          "        if(k & 1u)\n"
+                          "            for(unsigned c = 0; c < 6; c++) {\n"
+                          "                uint32_t t = out[0][c];\n"
+                          "                out[0][c] = out[-1][c];\n"
+                          "                out[-1][c] = t;\n"
+                          "            }\n")),
+        "vz0_not_loaded": (LIST_C, "        r[1] = v[0][1];\n", ""),
     },
     # the UNR mutants: the gte program, but not in MUTANTS["gte"] (tests/gte_sources_check.py pins a count for each
     # of those); tests/unr_check.py mutant must catch each one
@@ -103,19 +111,21 @@ def main(argv):
     if len(argv) != 5 or argv[1] not in MUTANTS or argv[2] not in MUTANTS[argv[1]]:
         sys.exit(__doc__ + "\nmutants: " + "; ".join("%s: %s" % (f, " ".join(m)) for f, m in MUTANTS.items()))
     family, name, root, output = argv[1:]
-    path, old, new = MUTANTS[family][name]
+    path, old, new, *extra = MUTANTS[family][name]
     for folder in ("src", "include"):
         # shutil.copy: new modification times, so the build sees the copy as new
         shutil.copytree(os.path.join(root, folder), os.path.join(output, folder), dirs_exist_ok=True,
                         copy_function=shutil.copy)
     with open(os.path.join(root, path), encoding="utf-8") as handle:
         text = handle.read()
-    count = text.count(old)
-    if count != 1:
-        sys.exit("mutant: %s %s: the old text %r occurs %d times in %s, not 1"
-                 % (family, name, old, count, os.path.join(root, path)))
+    for anchor, replacement in [(old, new), *extra]:
+        count = text.count(anchor)
+        if count != 1:
+            sys.exit("mutant: %s %s: the old text %r occurs %d times in %s, not 1"
+                     % (family, name, anchor, count, os.path.join(root, path)))
+        text = text.replace(anchor, replacement, 1)
     with open(os.path.join(output, path), "w", encoding="utf-8", newline="\n") as handle:
-        handle.write(text.replace(old, new))
+        handle.write(text)
 
 
 if __name__ == "__main__":

@@ -128,7 +128,7 @@ def main():
               % (name, found, path, "absent" if absent else "PRESENT", "" if ok else " FAIL"))
         fail |= not ok
     plants = (("psyz", plant(psyz_text, r"short ratan_tbl\[\] = \{([^}]*)\};"), sh2o_text),
-              ("sh2o", psyz_text, plant(sh2o_text, r"static const int16_t sh2oi_ratan_tbl\[\d+\] = \{([^}]*)\};")))
+              ("sh2o", psyz_text, plant(sh2o_text, r"static const int16_t sh2oi_ratan_tbl\[\d+\](?: SH2OI_RODATA\(\w+\))? = \{([^}]*)\};")))
     for name, planted_psyz, planted_sh2o in plants:
         caught = bool(compare(planted_psyz, planted_sh2o, formula))
         print("psyz_table: plant %s entry 512: %s" % (name, "caught" if caught else "NOT caught"))

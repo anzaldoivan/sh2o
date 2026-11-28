@@ -1,3 +1,4 @@
+# The job rules are in CONTRIBUTING.md, section "CI jobs"; scripts/check_ci.py checks them.
 # The PsyQ 4.7 archive against the game's libgte: make psyq47 with GCC fetches
 # the archive (a failed fetch skips the job with a summary line), builds both
 # variants, runs the tests with the label psyq47 and writes the report to the
@@ -5,16 +6,20 @@
 name: sh2o psyq47
 on:
   push:
+    branches: [dev, main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   psyq47:
     name: 4.7 archive = game libgte
     runs-on: ubuntu-24.04
     # A fresh build of both variants and the run take 38 s on a local machine
-    # (11.6 s with the builds current); 10 is the minimum, as in sh2o proofs.
+    # (11.6 s with the builds current); 10 is the minimum.
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

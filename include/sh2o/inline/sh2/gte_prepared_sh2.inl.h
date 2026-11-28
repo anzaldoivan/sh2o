@@ -19,8 +19,7 @@
  * (t * 4096 + R.v) SAR 12. Hardware assumption: SR.S = 0 (with S = 1, MAC.L saturates the sum to 48 bits). The
  * kernel does not read or set SR; the caller reads SR.S and does not call it when S is set. */
 SH2OI_FORCE_INLINE void sh2oi_gte_prepared_mac3_l(const int32_t c[9],const uint32_t pre[6],const int16_t v[3],
-    int32_t mac[3])
-{
+    int32_t mac[3]) {
     int32_t p[3];
     const int32_t *pm = c;
     const int32_t *pv = p;
@@ -29,34 +28,34 @@ SH2OI_FORCE_INLINE void sh2oi_gte_prepared_mac3_l(const int32_t c[9],const uint3
     p[1] = v[1];
     p[2] = v[2];
     SH2O_K_ENTER();
-    __asm__ volatile("lds %2, mach\n\t"
-                    "lds %3, macl\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "add #-12, %1\n\t"
-                    "sts mach, %2\n\t"
-                    "sts macl, %3\n\t"
-                    "lds %4, mach\n\t"
-                    "lds %5, macl\n\t"
-                    "xtrct %2, %3\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "add #-12, %1\n\t"
-                    "sts mach, %4\n\t"
-                    "sts macl, %5\n\t"
-                    "lds %6, mach\n\t"
-                    "lds %7, macl\n\t"
-                    "xtrct %4, %5\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "mac.l @%0+, @%1+\n\t"
-                    "sts mach, %6\n\t"
-                    "sts macl, %7\n\t"
-                    "xtrct %6, %7"
-                    : "+r"(pm), "+r"(pv), "+r"(h0), "+r"(l0), "+r"(h1), "+r"(l1), "+r"(h2), "+r"(l2)
-                    : "m"(*(const int32_t (*)[9])c), "m"(*(const int32_t (*)[3])p)
+    __asm__ volatile("lds %[h0], mach\n\t"
+                    "lds %[l0], macl\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "add #-12, %[v]\n\t"
+                    "sts mach, %[h0]\n\t"
+                    "sts macl, %[l0]\n\t"
+                    "lds %[h1], mach\n\t"
+                    "lds %[l1], macl\n\t"
+                    "xtrct %[h0], %[l0]\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "add #-12, %[v]\n\t"
+                    "sts mach, %[h1]\n\t"
+                    "sts macl, %[l1]\n\t"
+                    "lds %[h2], mach\n\t"
+                    "lds %[l2], macl\n\t"
+                    "xtrct %[h1], %[l1]\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "mac.l @%[m]+, @%[v]+\n\t"
+                    "sts mach, %[h2]\n\t"
+                    "sts macl, %[l2]\n\t"
+                    "xtrct %[h2], %[l2]"
+                    : [m] "+r"(pm), [v] "+r"(pv), [h0] "+r"(h0), [l0] "+r"(l0), [h1] "+r"(h1), [l1] "+r"(l1), [h2] "+r"(h2), [l2] "+r"(l2)
+                    : [c_mem] "m"(*(const int32_t (*)[9])c), [p_mem] "m"(*(const int32_t (*)[3])p)
                     : "mach", "macl");
     SH2O_K_LEAVE();
     mac[0] = (int32_t)l0;
@@ -65,4 +64,4 @@ SH2OI_FORCE_INLINE void sh2oi_gte_prepared_mac3_l(const int32_t c[9],const uint3
 }
 
 #endif /* SH2OI_NATIVE */
-#endif /* SH2O_GTE_PREPARED_SH2_INL_H */
+#endif

@@ -55,3 +55,18 @@ Each speed claim states its source. Only a console measurement is a hardware cla
 ## Style
 
 [docs/STYLE.md](docs/STYLE.md) gives the code and comment style. `make check` runs `scripts/style_check.py`, which checks it.
+
+## CI jobs
+
+The workflows in `.github/workflows/` obey these rules. `scripts/check_ci.py` checks rules 1, 2, 3, 6 and 9. The review of a change checks rules 4, 5, 7, 8 and 10.
+
+1. A job runs one make target. Each job, and each matrix row, has exactly one run step that calls `make`, with one goal. All other steps are setup: checkout, fetch, image pull, cache and log upload.
+2. `make ci` runs exactly what the workflows run. Expand each matrix. Each make run of a job, with its variables and the job environment that the target reads, is one line of the `ci` recipe or one prerequisite of `make check`.
+3. Job names are an interface. Each name in the maintainers' list of required check names is the name of exactly one job. All job names are different. If you change a job name, change the job and the list in the same commit.
+4. Add a new gate to an existing job. Make a new job only if the gate needs the network, a different image or more than approximately 2 minutes.
+5. A job that needs an input that the project cannot pin and keep (for example, the PsyQ archive) is optional. It is not a required check, and if the fetch fails, the job skips with a summary line. A pinned input that the job checks against its pin is a pinned fetch: if that fetch fails, the job fails.
+6. Each job has a time limit (`timeout-minutes`). The workflow permissions are read-only, and no job gets write permission. Each image reference uses a digest (`@sha256:`): `container:`, `docker pull` and `SH2_IMAGE` in the workflows and in the Makefile.
+7. The change that adds a job states if the job is a required check, and it adds the job's line to the `ci` recipe.
+8. Build one time. Each build tree has one job. Another gate on that tree is a part of that job and its one make goal, never a second build.
+9. Cache only pinned inputs. The cache key is a name and the pin (a commit, a digest or a sha256), as the source of the pin states it. After a restore, the job that uses the input checks the pin. Do not use `restore-keys`. Do not cache a path in `build/` or a build output that a gate examines (no ccache for gates). Do not cache Sony or game bytes: the PsyQ archive is never cached.
+10. Fetch a pinned input one time in each job, and use it from a fixed path.

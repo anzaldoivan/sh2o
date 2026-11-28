@@ -165,12 +165,13 @@ static unsigned long entry_differences(const char *name,unsigned long compared[2
         if(vector->op!=GTE_OP_CMD)
             continue;
         cmd=get_u32(vector->in+256);
-        if((cmd&0x3Fu)==0x01u)
+        if((cmd&0x3Fu)==0x01u) {
             k=0;
-        else if((cmd&0x3Fu)==0x30u)
+        } else if((cmd&0x3Fu)==0x30u) {
             k=1;
-        else
+        } else {
             continue;
+        }
         memset(&a,0,sizeof a);
         for(unsigned j=0;j<SH2O_GTE_ORDER_COUNT;j++)
             sh2o_gte_write(&a,sh2o_gte_order[j],get_u32(vector->in+4*sh2o_gte_order[j]));

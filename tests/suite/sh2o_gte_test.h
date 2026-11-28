@@ -11,6 +11,9 @@
 #include <stdint.h>
 
 #include "sh2o/gte.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SH2O_GTE_SEED 0x53484733u
 #define SH2O_GTE_OPS 14u
@@ -43,4 +46,7 @@ extern uint32_t sh2o_gte_mvb3_fast;
 extern uint32_t sh2o_gte_mvb3_flagged;
 #endif
 
-#endif /* SH2O_GTE_TEST_H */
+#ifdef __cplusplus
+}
+#endif
+#endif

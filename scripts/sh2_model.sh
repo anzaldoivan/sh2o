@@ -38,7 +38,7 @@
 # SH2O_ZAM (environment, default OFF; make sh2-model SH2O_ZAM=ON): OFF runs
 # the commands above. A bridge with the line "sh2_model-option: SH2O_ZAM"
 # names a family that runs only with ON. With ON, the folder is
-# build/sh2-model-zam (the Yabause source stays in build/sh2-model/yabause)
+# build/sh2-model-zam (the Yabause source is the same YABAUSE_SOURCE)
 # and every family runs. For each mode, the elf step first builds SH2ZAM's
 # external/SH2ZAM/saturn/src/*.c, unmodified, into <mode>/sh2zam/ and the
 # archive <mode>/libsh2zam.a, with -DSH2Z_REQUIRE_SH2=1 (native) or

@@ -28,9 +28,9 @@ The file is ASCII text with one item on each line. A line that starts with `#` i
 | `op <name> in <fields> out <fields>` | One operation and the layout of its inputs and results. |
 | `v <op> <in-hex> <out-hex>` | One vector: the input bytes and the result bytes. |
 
-A field is `<name>:<type>` or `<name>:<type>[<n>]`. The types are `i8`, `u8`, `i16`, `u16`, `i32` and `u32`. The second form is an array of `<n>` values. `<n>` is a decimal number, 1 or more. An array field has `<n>` times the bytes of its type. For example, `regs:u32[64]` is 64 `u32` values, value 0 first, in 256 bytes. The fields are packed in order, with no padding. Each value is little-endian, as in PS1 memory. The converter makes sure that each vector has the byte count of its op line.
+A field is `<name>:<type>` or `<name>:<type>[<n>]`. The types are `i8`, `u8`, `i16`, `u16`, `i32` and `u32`. The second form is an array of `<n>` values. `<n>` is a decimal number, 1 or more. An array field has `<n>` times the bytes of its type. For example, `regs:u32[64]` is 64 `u32` values, value 0 first, in 256 bytes. The file packs the fields in order, with no padding. Each value is little-endian, as in PS1 memory. The converter makes sure that each vector has the byte count of its op line.
 
-The inputs of an op have a maximum of 65535 bytes, and its results have the same maximum. A file has a maximum of 256 ops. If an op is larger or if there are more ops, the converter stops and gives the line number.
+The inputs of an op have a maximum of 65535 bytes, and its results have the same maximum. A file has a maximum of 256 ops. If an op is larger or if there are more ops, the converter stops and shows the line number.
 
 Example from `tests/vectors/fixed.vec`:
 
@@ -53,7 +53,7 @@ The test decodes each input from its bytes with shifts. It calls the function an
 
 At the first difference, the test prints the vector number, the op, the byte number, the input bytes, the expected bytes and the result bytes. Then it stops with a failure.
 
-A private input is never in git. A test gets its path from an environment variable that names a path outside the repository: `SH2O_PS1_LIBGTE_OBJECTS` (the folder of libgte objects of a PS1 build), `SH2O_PS1_LINK_MAP` (the link map of that build), `SH2O_PS1_DATA` (the folder of data files of that build) and `SH2O_PS1_GTE_RECORDINGS` (the folder of PS1 GTE recordings). CMake registers the test with `sh2o_add_private_test`. If the variable is not set or the path is not there, the test prints why and stops with exit code 77, and CTest shows it as skipped. A path in the repository makes the test fail.
+A private input is never in git. A test gets its path from an environment variable that names a path outside the repository. `SH2O_PS1_LIBGTE_OBJECTS` names the folder of libgte objects of a PS1 build. `SH2O_PS1_LINK_MAP` names the link map of that build. `SH2O_PS1_DATA` names the folder of data files of that build. `SH2O_PS1_GTE_RECORDINGS` names the folder of PS1 GTE recordings. CMake registers the test with `sh2o_add_private_test`. If the variable is not set or the path is not there, the test prints why and stops with exit code 77. CTest then shows the test as skipped. A path in the repository makes the test fail.
 
 ## Mutants
 
@@ -89,13 +89,13 @@ The `k` family (`include/sh2o/k.h`) has seven kernels. Its proof has four parts.
 | `swapped_index` | The third product uses the second element of the vector. |
 | `lost_carry` | The carry out of the low word is lost. |
 
-`make test` runs each test that does not have the label `proof`. `make proofs` runs all tests. Give the label `proof` to a test that runs for more than 60 seconds. Today no test has this label.
+`make test` runs each test that does not have the label `proof`. `make proofs` runs all tests. Put the label `proof` on a test that runs for more than 60 seconds. Today no test has this label.
 
-A check of private inputs can also be a script. Register it with `sh2o_add_private_test(<name> COMMAND <command>...)`. CMake gives no argument to the command, so put each argument in the command. `tests/private_inputs.py` is the script form of `tests/private_inputs.c`. Its second test runs CTest on it three times and must see Skipped, Skipped and Failed.
+A check of private inputs can also be a script. Register it with `sh2o_add_private_test(<name> COMMAND <command>...)`. CMake supplies no argument to the command, so put each argument in the command. `tests/private_inputs.py` is the script form of `tests/private_inputs.c`. Its second test runs CTest on it three times and must see Skipped, Skipped and Failed.
 
 ## A big family: gte
 
-The `gte` family (`include/sh2o/gte.h`) has one register image and 14 commands. [GTE.md](GTE.md) gives all its sources and counts. Its vector file `tests/vectors/gte.vec` has two ops:
+The `gte` family (`include/sh2o/gte.h`) has one register image and 14 commands. [GTE.md](GTE.md) lists all its sources and counts. Its vector file `tests/vectors/gte.vec` has two ops:
 
 ```
 op cmd in regs:u32[64] cmd:u32 out rc:i32 regs:u32[64]
@@ -108,27 +108,27 @@ The mutants work as in the `k` family: `tests/mutant.py` plants each bug in a co
 
 ## A big family: psyq
 
-The `psyq` family (`include/sh2o/psyq.h`) has 19 PSY-Q `libgte` bodies. [PSYQ.md](PSYQ.md) gives all its sources and counts.
+The `psyq` family (`include/sh2o/psyq.h`) has 19 PSY-Q `libgte` bodies. [PSYQ.md](PSYQ.md) lists all its sources and counts.
 
-The oracle is the PS1 library code itself. The tests run the code bytes of each body from a private PS1 build in a Python R3000 model, `scripts/psyq_model.py`, with the GTE commands of `scripts/gte_model.py`. The code is never in the repository, so the family has no `.vec` file: a vector file would hold the results of that code. The three variables `SH2O_PS1_LIBGTE_OBJECTS`, `SH2O_PS1_LINK_MAP` and `SH2O_PS1_DATA` name the build. The five private tests skip when a variable is not set.
+The oracle is the PS1 library code itself. The tests run the code bytes of each body from a private PS1 build in a Python R3000 model, `scripts/psyq_model.py`. That model uses the GTE commands of `scripts/gte_model.py`. The code is never in the repository, so the family has no `.vec` file: a vector file would hold the results of that code. The three variables `SH2O_PS1_LIBGTE_OBJECTS`, `SH2O_PS1_LINK_MAP` and `SH2O_PS1_DATA` name the build. The five private tests skip when a variable is not set.
 
-The public checks are the suite, the table check and the mutants. The suite `tests/suite/sh2o_psyq_test_suite.c` makes 1,216 cases and compares their digest with its pin. It also has 6 `ratan2` known answers. The private test `psyq_model_suite` computes the same digest from the PS1 code, so the pin comes from the oracle. `psyq_table` compares the `ratan2` table with its formula. Each of the 19 psyq mutants must make the suite fail. The suite also counts the calls of the break hook: over the seeded cases the count must be 0, and the test `psyq_plant_break`, with a planted zero divisor, must give a count more than 0.
+The public checks are the suite, the table check and the mutants. The suite `tests/suite/sh2o_psyq_test_suite.c` makes 1,216 cases and compares their digest with its pin. It also has 6 `ratan2` known answers. The private test `psyq_model_suite` computes the same digest from the PS1 code, so the pin comes from the oracle. `psyq_table` compares the `ratan2` table with its formula. Each of the 19 psyq mutants must make the suite fail. The suite also counts the calls of the break hook. Over the seeded cases the count must be 0. The test `psyq_plant_break` uses a planted zero divisor and must give a count more than 0.
 
-Some checks against the PS1 code are now public. They use psyz at its pin (`scripts/psyz_pin.txt`). The `ratan2` table of sh2o is equal to the table of psyz (test `psyz_table`). The test `psyz_ratan2_sweep` compiles the `ratan2` of psyz and compares it with sh2o on 17,834,154 pairs: 0 differences. The test `psyz_libgte` runs the known answers of psyz on sh2o: 115 pass, 1 differs and 109 do not run. In the case that differs, the model `scripts/gte_model.py` gives the result of sh2o. [PSYQ.md](PSYQ.md) gives the details.
+Some checks against the PS1 code are now public. They use psyz at its pin (`scripts/psyz_pin.txt`). The `ratan2` table of sh2o is equal to the table of psyz (test `psyz_table`). The test `psyz_ratan2_sweep` compiles the `ratan2` of psyz and compares it with sh2o on 17,834,154 pairs: 0 differences. The test `psyz_libgte` runs the known answers of psyz on sh2o: 115 pass, 1 differs and 109 do not run. In the case that differs, the model `scripts/gte_model.py` gives the result of sh2o. [PSYQ.md](PSYQ.md) shows the details.
 
-The public oracle of the 19 bodies is the PSY-Q 4.7 job, `make psyq47` (CI job `4.7 archive = game libgte`). It is optional and needs the network. It gets the PSY-Q 4.7 archive at test time and checks its sha256. If the download fails, the job skips. The job proves two things. First, the code of each body in the 4.7 library is equal to the code of the private PS1 build (version byte 0x45, PSY-Q 4.5), apart from the version word and the relocation fields: 15 bodies are identical and 4 are equal after masking. Second, the 4.7 code, run in `scripts/psyq_model.py`, gives the same results as sh2o on all the seeded cases of the private checks, the suite digest and the `ratan2` pairs, and each of the 19 mutants gives its pinned count. The GTE commands of that run come from `scripts/gte_model.py`. The family still has no `.vec` file: its oracle is library code that the job gets at test time, and a vector file would hold the results of that code. The repository keeps only the digests of the bodies (`tests/psyq47/game_digests.txt`) and the seeds of the cases. [PSYQ.md](PSYQ.md#the-psy-q-47-job) gives the details.
+The public oracle of the 19 bodies is the PSY-Q 4.7 job, `make psyq47` (CI job `4.7 archive = game libgte`). It is optional and needs the network. It gets the PSY-Q 4.7 archive at test time and checks its sha256. If the download fails, the job skips. The job proves two things. First, the code of each body in the 4.7 library is equal to the code of the private PS1 build (version byte 0x45, PSY-Q 4.5). The comparison excludes the version word and the relocation fields. Of the bodies, 15 are identical and 4 are equal after masking. Second, the job runs the 4.7 code in `scripts/psyq_model.py`. That code gives the same results as sh2o on all the seeded cases of the private checks, the suite digest and the `ratan2` pairs. Each of the 19 mutants also gives its pinned count. The GTE commands of that run come from `scripts/gte_model.py`. The family still has no `.vec` file. Its oracle is library code that the job gets at test time, and a vector file would hold the results of that code. The repository keeps only the digests of the bodies (`tests/psyq47/game_digests.txt`) and the seeds of the cases. [PSYQ.md](PSYQ.md#the-psy-q-47-job) shows the details.
 
 The SH-2 model run has no oracle file for this family. It runs the suite from its digest: each program must give the pinned digest and the 6 known answers.
 
 ## A big family: list
 
-The `list` family (`include/sh2o/list.h`) has one call, `sh2o_gte_mvmva_list`. [GTE.md](GTE.md#the-mvmva-list) gives its sources and counts. The oracle is the Python GTE model `scripts/gte_model.py`. `scripts/vectors_list.py` writes the 88 vectors of `tests/vectors/list.vec`, with one op:
+The `list` family (`include/sh2o/list.h`) has one call, `sh2o_gte_mvmva_list`. [GTE.md](GTE.md#the-mvmva-list) lists its sources and counts. The oracle is the Python GTE model `scripts/gte_model.py`. `scripts/vectors_list.py` writes the 88 vectors of `tests/vectors/list.vec`, with one op:
 
 ```
 op list in regs:u32[64] cmd:u32 n:u32 items:u32[32] out rows:u32[96] regs:u32[64]
 ```
 
-The test writes `regs` in the gte suite's order on a zeroed image, as for `gte`. Then it calls the list on the n items (two words each; items n..15 are 0). It compares the 16 out rows (rows n..15 are 0) and the 64 reads of `sh2o_gte_read`. The suite also compares each list with its singles. Each of the 5 list mutants must give an oracle-vector difference.
+The test writes `regs` in the gte suite's order on a zeroed image, as for `gte`. Then it calls the list on the n items. Each item is two words, and items n..15 are 0. It compares the 16 out rows (rows n..15 are 0) and the 64 reads of `sh2o_gte_read`. The suite also compares each list with its singles. Each of the 5 list mutants must give an oracle-vector difference.
 
 ## The delegate
 
@@ -140,6 +140,6 @@ The delegate's 5 mutants must make its suite fail (`zam_mutant_<name>`), not an 
 
 ## The SH-2 side
 
-On the host, the test runs the portable C path. `make cross` builds the SH-2 path. `make sh2-model` runs the SH-2 machine code in an SH-2 instruction model, the SH-2 interpreter of Yabause ([benchmarks/sh2-model](../benchmarks/sh2-model/README.md)). It builds a native and a portable program, and it compares all result bytes of the family's oracle header with the expected bytes, before it gives a cycle figure. A family is "exact on the SH-2" when this run passes for the native and the portable program. The cycle figures are MODELLED, not Saturn timings. This generation has no console run. [VALIDATION.md](VALIDATION.md) records each run.
+On the host, the test runs the portable C path. `make cross` builds the SH-2 path. `make sh2-model` runs the SH-2 machine code in an SH-2 instruction model, the SH-2 interpreter of Yabause ([benchmarks/sh2-model](../benchmarks/sh2-model/README.md)). It builds a native and a portable program. It compares all result bytes of the family's oracle header with the expected bytes, before it gives a cycle figure. A family is "exact on the SH-2" when this run passes for the native and the portable program. The cycle figures are MODELLED, not Saturn timings. This generation has no console run. [VALIDATION.md](VALIDATION.md) records each run.
 
-The SH-2 build is reproducible. `tests/sh2/objects.sha256` holds the Yaul image digest and the sha256 of each SH-2 object, of both `libsh2o.a` and of each model ELF of both lanes. The file is generated: `make sh2-manifest` writes it again (it needs the SH2ZAM checkout, whose `model.ld` the ELFs link). `make cross` builds the same files and fails when a sha256 differs, a listed file is missing, a built file is not listed or the image is not the manifest's; without SH2ZAM it skips the ELF lines. A change to the code or the build regenerates the manifest in the same commit.
+The SH-2 build is reproducible. `tests/sh2/objects.sha256` holds the Yaul image digest and the sha256 of each SH-2 object, of both `libsh2o.a` and of each model ELF of both lanes. `make sh2-manifest` generates the file (it needs the SH2ZAM checkout, whose `model.ld` the ELFs link). `make cross` builds the same files. It fails when a sha256 differs or a listed file is missing. It also fails when the manifest does not list a built file or the image is not the manifest's. Without SH2ZAM it skips the ELF lines. A change to the code or the build regenerates the manifest in the same commit.

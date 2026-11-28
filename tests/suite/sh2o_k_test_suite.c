@@ -63,36 +63,36 @@ static void sh2o_k_mvb3_w_mut_drop(const uint32_t w[5],const int16_t v[3],const 
     q[1]=v[0];
     q[2]=v[2];
     q[3]=v[1];
-    __asm__ volatile("lds %2, mach\n\t"
-                    "lds %3, macl\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "add #2, %0\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "sts mach, %2\n\t"
-                    "sts macl, %3\n\t"
-                    "lds %4, mach\n\t"
-                    "lds %5, macl\n\t"
-                    "add #-4, %0\n\t"
-                    "add #-4, %1\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "add #2, %0\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "add #2, %0\n\t" /* dropped: mac.w @%0+, @%1+ */
-                    "add #2, %1\n\t"
-                    "sts mach, %4\n\t"
-                    "sts macl, %5\n\t"
-                    "lds %6, mach\n\t"
-                    "lds %7, macl\n\t"
-                    "add #-8, %1\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "add #2, %0\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "sts mach, %6\n\t"
-                    "sts macl, %7"
-                    : "+r"(pm), "+r"(pv), "+r"(h0), "+r"(l0), "+r"(h1), "+r"(l1), "+r"(h2), "+r"(l2)
-                    : "m"(*(const uint32_t (*)[5])w), "m"(*(const int16_t (*)[4])q)
+    __asm__ volatile("lds %[h0], mach\n\t"
+                    "lds %[l0], macl\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "add #2, %[m]\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "sts mach, %[h0]\n\t"
+                    "sts macl, %[l0]\n\t"
+                    "lds %[h1], mach\n\t"
+                    "lds %[l1], macl\n\t"
+                    "add #-4, %[m]\n\t"
+                    "add #-4, %[v]\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "add #2, %[m]\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "add #2, %[m]\n\t" /* dropped: mac.w @%[m]+, @%[v]+ */
+                    "add #2, %[v]\n\t"
+                    "sts mach, %[h1]\n\t"
+                    "sts macl, %[l1]\n\t"
+                    "lds %[h2], mach\n\t"
+                    "lds %[l2], macl\n\t"
+                    "add #-8, %[v]\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "add #2, %[m]\n\t"
+                    "mac.w @%[m]+, @%[v]+\n\t"
+                    "sts mach, %[h2]\n\t"
+                    "sts macl, %[l2]"
+                    : [m] "+r"(pm), [v] "+r"(pv), [h0] "+r"(h0), [l0] "+r"(l0), [h1] "+r"(h1), [l1] "+r"(l1), [h2] "+r"(h2), [l2] "+r"(l2)
+                    : [w_mem] "m"(*(const uint32_t (*)[5])w), [q_mem] "m"(*(const int16_t (*)[4])q)
                     : "mach", "macl");
     out[0]=(int64_t)(((uint64_t)h0<<32)|l0);
     out[1]=(int64_t)(((uint64_t)h1<<32)|l1);
@@ -168,21 +168,21 @@ static void sh2o_k_gpf3_w_mut_drop(const uint32_t w[4],int64_t out[3]) {
     const int16_t *pi=(const int16_t *)(const void *)w+3,*p0=(const int16_t *)(const void *)w+1;
     uint32_t h0,l0,h1,l1,h2,l2;
     __asm__ volatile("clrmac\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "add #2, %0\n\t"
-                    "add #-2, %1\n\t"
-                    "sts mach, %2\n\t"
-                    "sts macl, %3\n\t"
+                    "mac.w @%[pi]+, @%[p0]+\n\t"
+                    "add #2, %[pi]\n\t"
+                    "add #-2, %[p0]\n\t"
+                    "sts mach, %[h0]\n\t"
+                    "sts macl, %[l0]\n\t"
                     "clrmac\n\t"
-                    "add #4, %0\n\t" /* dropped: mac.w @%0+, @%1+ ; add #2, %0 ; add #-2, %1 */
-                    "sts mach, %4\n\t"
-                    "sts macl, %5\n\t"
+                    "add #4, %[pi]\n\t" /* dropped: mac.w @%[pi]+, @%[p0]+ ; add #2, %[pi] ; add #-2, %[p0] */
+                    "sts mach, %[h1]\n\t"
+                    "sts macl, %[l1]\n\t"
                     "clrmac\n\t"
-                    "mac.w @%0+, @%1+\n\t"
-                    "sts mach, %6\n\t"
-                    "sts macl, %7"
-                    : "+r"(pi), "+r"(p0), "=&r"(h0), "=&r"(l0), "=&r"(h1), "=&r"(l1), "=&r"(h2), "=&r"(l2)
-                    : "m"(*(const uint32_t (*)[4])w)
+                    "mac.w @%[pi]+, @%[p0]+\n\t"
+                    "sts mach, %[h2]\n\t"
+                    "sts macl, %[l2]"
+                    : [pi] "+r"(pi), [p0] "+r"(p0), [h0] "=&r"(h0), [l0] "=&r"(l0), [h1] "=&r"(h1), [l1] "=&r"(l1), [h2] "=&r"(h2), [l2] "=&r"(l2)
+                    : [w_mem] "m"(*(const uint32_t (*)[4])w)
                     : "mach", "macl");
     out[0]=(int64_t)(((uint64_t)h0<<32)|l0);
     out[1]=(int64_t)(((uint64_t)h1<<32)|l1);

@@ -11,10 +11,9 @@
 #include <stdint.h>
 
 /* sh2oi_k_sr_s: SR.S (bit 1) as 0 or 1, read with one STC SR; never writes SR */
-SH2OI_FORCE_INLINE unsigned sh2oi_k_sr_s(void)
-{
+SH2OI_FORCE_INLINE unsigned sh2oi_k_sr_s(void) {
     uint32_t sr;
-    __asm__ volatile("stc sr, %0" : "=r"(sr));
+    __asm__ volatile("stc sr, %[sr]" : [sr] "=r"(sr));
     return (unsigned)(sr >> 1) & 1u;
 }
 
@@ -24,8 +23,7 @@ SH2OI_FORCE_INLINE unsigned sh2oi_k_sr_s(void)
  * SH2ZAM. It reads SR once and never writes it: S set, the C reference (no MAC); S clear, the -1 MAC.W body, whose
  * SR.S = 0 assumption then holds. Gives the bytes of the C reference for either S. */
 /* sh2o_k_dot3b_w2: as sh2o_k_dot3b_c; sh2o_k_dot3b_w when SR.S = 0 */
-SH2OI_FORCE_INLINE int64_t sh2o_k_dot3b_w2(const int16_t m[3],const int16_t v[3],int32_t tr)
-{
+SH2OI_FORCE_INLINE int64_t sh2o_k_dot3b_w2(const int16_t m[3],const int16_t v[3],int32_t tr) {
     if(sh2oi_k_sr_s())
         return sh2o_k_dot3b_c(m,v,tr);
     return sh2o_k_dot3b_w(m,v,tr);
@@ -37,12 +35,12 @@ SH2OI_FORCE_INLINE int64_t sh2o_k_dot3b_w2(const int16_t m[3],const int16_t v[3]
  * SH2ZAM. It reads SR once and never writes it: S set, the C reference (no MAC); S clear, the -1 MAC.W body, whose
  * SR.S = 0 assumption then holds. Gives the bytes of the C reference for either S. */
 /* sh2o_k_mvb3_w2: as sh2o_k_mvb3_c; sh2o_k_mvb3_w when SR.S = 0 */
-SH2OI_FORCE_INLINE void sh2o_k_mvb3_w2(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3])
-{
-    if(sh2oi_k_sr_s())
+SH2OI_FORCE_INLINE void sh2o_k_mvb3_w2(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]) {
+    if(sh2oi_k_sr_s()) {
         sh2o_k_mvb3_c(w,v,t,out);
-    else
+    } else {
         sh2o_k_mvb3_w(w,v,t,out);
+    }
 }
 
 /* Contract tag k-gpf3-macw-2. Replaces k-gpf3-macw-1 (sh2o_k_gpf3_w, k_sh2.inl.h).
@@ -51,12 +49,12 @@ SH2OI_FORCE_INLINE void sh2o_k_mvb3_w2(const uint32_t w[5],const int16_t v[3],co
  * SH2ZAM. It reads SR once and never writes it: S set, the C reference (no MAC); S clear, the -1 MAC.W body, whose
  * SR.S = 0 assumption then holds. Gives the bytes of the C reference for either S. */
 /* sh2o_k_gpf3_w2: as sh2o_k_gpf3_c; sh2o_k_gpf3_w when SR.S = 0 */
-SH2OI_FORCE_INLINE void sh2o_k_gpf3_w2(const uint32_t w[4],int64_t out[3])
-{
-    if(sh2oi_k_sr_s())
+SH2OI_FORCE_INLINE void sh2o_k_gpf3_w2(const uint32_t w[4],int64_t out[3]) {
+    if(sh2oi_k_sr_s()) {
         sh2o_k_gpf3_c(w,out);
-    else
+    } else {
         sh2o_k_gpf3_w(w,out);
+    }
 }
 
 /* Contract tag k-gpl3-macw-2. Replaces k-gpl3-macw-1 (sh2o_k_gpl3_w, k_sh2.inl.h).
@@ -65,14 +63,14 @@ SH2OI_FORCE_INLINE void sh2o_k_gpf3_w2(const uint32_t w[4],int64_t out[3])
  * SH2ZAM. It reads SR once and never writes it: S set, the C reference (no MAC); S clear, the -1 MAC.W body, whose
  * SR.S = 0 assumption then holds. Gives the bytes of the C reference for either S. */
 /* sh2o_k_gpl3_w2: as sh2o_k_gpl3_c; sh2o_k_gpl3_w when SR.S = 0 */
-SH2OI_FORCE_INLINE void sh2o_k_gpl3_w2(const uint32_t w[4],const uint32_t mac[3],unsigned sf,int64_t out[3])
-{
-    if(sh2oi_k_sr_s())
+SH2OI_FORCE_INLINE void sh2o_k_gpl3_w2(const uint32_t w[4],const uint32_t mac[3],unsigned sf,int64_t out[3]) {
+    if(sh2oi_k_sr_s()) {
         sh2o_k_gpl3_c(w,mac,sf,out);
-    else
+    } else {
         sh2o_k_gpl3_w(w,mac,sf,out);
+    }
 }
 
 #endif /* SH2OI_NATIVE */
 
-#endif /* SH2O_K_SH2_MACW2_INL_H */
+#endif

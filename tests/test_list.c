@@ -82,6 +82,43 @@ static unsigned long differences(const char *name,unsigned long *bytes_compared)
     return count;
 }
 
+static int list_fold_check(void) {
+    static const uint32_t v[3][2]={{1u,0x5555fffeu},{0xfffe0002u,0xaaaafffdu},{0x1234fffcu,0x76540006u}};
+    static const unsigned regs[6]={9,10,11,25,26,27};
+    const uint32_t cmd=0x86012u;
+    sh2o_gte_t g={0},fold;
+    uint32_t out[3][6];
+    g.r[32]=g.r[34]=g.r[36]=0x1000u;
+    g.r[1]=0x76543210u;
+    fold=g;
+    sh2o_gte_mvmva_list(&g,cmd,NULL,0,NULL);
+    if(memcmp(g.r,fold.r,sizeof g.r)) {
+        fprintf(stderr,"list: empty raw image mismatch\n");
+        return 1;
+    }
+    sh2o_gte_mvmva_list(&g,cmd,v,3,out);
+    for(unsigned i=0;i<3;i++) {
+        sh2o_gte_write(&fold,0,v[i][0]);
+        sh2o_gte_write(&fold,1,v[i][1]);
+        sh2o_gte_mvmva(&fold,cmd);
+        for(unsigned j=0;j<6;j++) {
+            uint32_t want=sh2o_gte_read(&fold,regs[j]);
+            if(out[i][j]!=want) {
+                fprintf(stderr,"list: output mismatch at row %u word %u: expected %08lx got %08lx\n",i,j,
+                    (unsigned long)want,(unsigned long)out[i][j]);
+                return 1;
+            }
+        }
+    }
+    for(unsigned j=0;j<64;j++) {
+        if(g.r[j]!=fold.r[j]||sh2o_gte_read(&g,j)!=sh2o_gte_read(&fold,j)) {
+            fprintf(stderr,"list: final register mismatch at word %u\n",j);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main(int argc,char **argv) {
     unsigned long bytes=0;
     uint32_t c[5];
@@ -95,6 +132,8 @@ int main(int argc,char **argv) {
         fprintf(stderr,"usage: %s [--mutant <name>]\n",argv[0]);
         return EXIT_FAILURE;
     }
+    if(list_fold_check())
+        return EXIT_FAILURE;
     if(differences("library",&bytes)!=0) {
         fprintf(stderr,"list: FAIL: the library differs from the oracle\n");
         return EXIT_FAILURE;

@@ -40,10 +40,11 @@ int main(void) {
             unsigned r,v;
             if(scanf("%u %x",&r,&v)!=2||r>63)
                 return 2;
-            if(r<32)
+            if(r<32) {
                 Psyz_GteDataWrite(r,v);
-            else
+            } else {
                 Psyz_GteCtrlWrite(r-32,v);
+            }
         }
         if(strcmp(cmd,"-")!=0) {
             unsigned c;

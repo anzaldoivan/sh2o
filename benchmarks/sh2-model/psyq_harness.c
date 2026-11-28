@@ -154,12 +154,13 @@ static int psyq_cases(unsigned variant) {
             a[k]=rl(&cpu,args+4*k);
         const psyq_body_t *b=&psyq_bodies[body];
         struct cost cost=invoke(psyq_symbol[body],a[0],a[1],a[2],a[3]);
-        if(b->ret=='v')
+        if(b->ret=='v') {
             ret=0;
-        else if(b->ret=='i')
+        } else if(b->ret=='i') {
             ret=cost.result;
-        else
+        } else {
             ret=cost.result==a[b->arg]?b->arg:UINT32_C(0xFFFFFFFF);
+        }
         invoke("_sh2o_psyq_test_case_hash",c,ret,s,0);
         psyq_stats_t *st=&psyq_stats[variant][body];
         if(st->count==0||cost.cycles<st->min_cycles)

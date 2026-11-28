@@ -14,6 +14,9 @@
 #include "sh2o/psyq.h"
 #include "sh2o_gte_test.h"
 #include "sh2o_k_test.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SH2O_ZAM_SEEDED (3u * 256u + 256u * 16u) /* (B): 256 RTPS, 256 RTPT, 256 MVMVA, every selector x 16 */
 #define SH2O_ZAM_GATE_ITEMS 12u                 /* (C): 11 edge rows, then the domain checks by entry */
@@ -138,4 +141,7 @@ enum {
 };
 int sh2o_zam_test_entry(uint32_t *w,uint32_t (*now)(void));
 
-#endif /* SH2O_ZAM_TEST_H */
+#ifdef __cplusplus
+}
+#endif
+#endif

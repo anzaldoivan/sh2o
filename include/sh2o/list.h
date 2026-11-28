@@ -27,4 +27,4 @@ void sh2o_gte_mvmva_list(sh2o_gte_t *g,uint32_t cmd,const uint32_t (*v)[2],unsig
 #ifdef __cplusplus
 }
 #endif
-#endif /* SH2O_LIST_H */
+#endif

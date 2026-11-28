@@ -18,8 +18,7 @@ __attribute__((used,aligned(8))) uint8_t sh2o_model_gte_io[512];
 _Static_assert(sizeof(sh2o_gte_t)==256u,"the harness puts one sh2o_gte_t image at the start of the io buffer");
 
 void sh2o_model_gte_mac3(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]);
-void sh2o_model_gte_mac3(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3])
-{
+void sh2o_model_gte_mac3(const uint32_t w[5],const int16_t v[3],const int32_t t[3],int64_t out[3]) {
     sh2o_k_mvb3(w,v,t,out);
 }
 

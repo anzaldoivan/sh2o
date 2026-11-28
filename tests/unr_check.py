@@ -42,7 +42,7 @@ def model_recip(sz):
 
 def recip(exe):
     """Return None when every row equals the model, else the first problem."""
-    found = re.search(r"static const uint8_t unr\[0x101\] = \{(.*?)\};", K_SW.read_text(encoding="utf-8"), re.DOTALL)
+    found = re.search(r"static const uint8_t unr\[0x101\](?: SH2OI_RODATA\(\w+\))? = \{(.*?)\};", K_SW.read_text(encoding="utf-8"), re.DOTALL)
     if not found:
         return "no unr[0x101] table in %s" % K_SW
     if bytes(int(t, 16) for t in re.findall(r"0x[0-9A-F]{2}", found.group(1))) != UNR:

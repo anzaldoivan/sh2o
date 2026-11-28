@@ -273,9 +273,59 @@ static unsigned fallback_check(void) {
     return bad;
 }
 
+static int load_parts_check(void) {
+    static const int32_t edge[]={-0x7ff40001,-0x7ff40000,-0x7ff3ffff,0x7ff3ffff,0x7ff40000,0x7ff40001,
+        INT32_MIN,INT32_MAX};
+    for(unsigned k=0;k<sizeof edge/sizeof edge[0];k++) {
+        sh2o_gte_t g={0},saved;
+        for(unsigned m=0;m<3;m++)
+            for(unsigned j=0;j<5;j++)
+                g.r[32+8*m+j]=0x80007fffu+((m+j)<<16)-(m+j);
+        g.r[37+k%3]=(uint32_t)edge[k];
+        g.r[45+(k+1)%3]=(uint32_t)edge[(k+3)%(sizeof edge/sizeof edge[0])];
+        saved=g;
+        for(unsigned mask=0;mask<=SH2O_GTE_PREPARED_ALL;mask++) {
+            sh2o_gte_prepared_t p,want;
+            memset(&p,0xa5,sizeof p);
+            memset(&want,0xa5,sizeof want);
+            for(unsigned m=0;m<3;m++) {
+                if(mask&(1u<<m)) {
+                    for(unsigned j=0;j<9;j++) {
+                        uint16_t h=(uint16_t)(g.r[32+8*m+j/2]>>(16*(j%2)));
+                        want.c[m][j]=(int32_t)(int16_t)h*16;
+                    }
+                }
+                if(mask&(8u<<m)) {
+                    want.ok[m]=1;
+                    for(unsigned j=0;j<3;j++) {
+                        int32_t t=m==2?0:(int32_t)g.r[37+8*m+j];
+                        uint64_t bits=(uint64_t)((int64_t)t*65536);
+                        want.pre[m][2*j]=(uint32_t)(bits>>32);
+                        want.pre[m][2*j+1]=(uint32_t)bits;
+                        if(t<=-0x7ff40000||t>=0x7ff40000)
+                            want.ok[m]=0;
+                    }
+                }
+            }
+            sh2o_gte_prepared_load(&p,&g,mask|0x80000240u);
+            if(memcmp(p.ok,want.ok,sizeof p.ok)) {
+                fprintf(stderr,"prepared load: gate mismatch at edge %u mask %02x\n",k,mask);
+                return 1;
+            }
+            if(memcmp(&p,&want,sizeof p)||memcmp(g.r,saved.r,sizeof g.r)) {
+                fprintf(stderr,"prepared load: shadow/source byte mismatch at edge %u mask %02x\n",k,mask);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 int main(void) {
     unsigned vectors,fast,gated,bad=0,d;
     uint32_t h,ref;
+    if(load_parts_check())
+        return EXIT_FAILURE;
     /* 1 */
     d=oracle_check(&arms[0],&vectors,&fast);
     printf("prepared: oracle: %u MVMVA vectors (%u on the kernel path), %u differ\n",vectors,fast,d);

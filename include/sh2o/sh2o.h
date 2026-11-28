@@ -16,10 +16,10 @@
 extern "C" {
 #endif
 
-/** \brief Version of the sh2o API, as major.minor.patch. */
+/* Version of the sh2o API, as major.minor.patch. */
 #define SH2O_VERSION "0.1.0"
 
-/** \brief Gives the name of the code path that the library was built with.
+/* Gives the name of the code path that the library was built with.
  *
  *  The result is "sh2" when the library uses the SH-2 inline assembly, and
  *  "portable" when it uses the C path. Both paths give the same results. The

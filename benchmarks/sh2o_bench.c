@@ -10,8 +10,7 @@
 
 /* noise_pct: the band, written before the run */
 sh2o_bench_verdict sh2o_bench_classify(uint32_t ref,uint32_t cand,uint32_t noise_pct);
-sh2o_bench_verdict sh2o_bench_classify(uint32_t ref,uint32_t cand,uint32_t noise_pct)
-{
+sh2o_bench_verdict sh2o_bench_classify(uint32_t ref,uint32_t cand,uint32_t noise_pct) {
     uint64_t band = (uint64_t)ref * noise_pct / 100u;
     if((uint64_t)cand + band < ref)
         return SH2O_BENCH_BETTER;
@@ -24,12 +23,10 @@ sh2o_bench_verdict sh2o_bench_classify(uint32_t ref,uint32_t cand,uint32_t noise
 void sh2o_bench_run(const sh2o_bench_op *op,sh2o_bench_tick tick,uint32_t rounds,uint32_t *ref_min,
                     uint32_t *cand_min);
 void sh2o_bench_run(const sh2o_bench_op *op,sh2o_bench_tick tick,uint32_t rounds,uint32_t *ref_min,
-                    uint32_t *cand_min)
-{
+                    uint32_t *cand_min) {
     uint32_t r,t0,d;
     *ref_min = *cand_min = UINT32_MAX;
-    for(r = 0; r < rounds; r++)
-    {
+    for(r = 0; r < rounds; r++) {
         t0 = tick();
         op->ref(op->K);
         d = tick() - t0;
